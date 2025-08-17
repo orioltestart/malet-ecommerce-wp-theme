@@ -1,0 +1,12 @@
+/*
+RTL Stylesheet for Malet Torrent Theme
+*/
+
+body {
+    direction: rtl;
+    text-align: right;
+}
+
+.malet-torrent-grid {
+    direction: rtl;
+}
