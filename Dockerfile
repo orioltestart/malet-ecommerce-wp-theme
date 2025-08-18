@@ -30,53 +30,8 @@ COPY assets/ /var/www/html/wp-content/themes/malet-torrent/assets/
 COPY inc/ /var/www/html/wp-content/themes/malet-torrent/inc/
 COPY updater/ /var/www/html/wp-content/themes/malet-torrent/updater/
 
-# Crear directoris per volums persistents
-RUN mkdir -p /var/www/html/wp-content/uploads && \
-    mkdir -p /var/www/html/wp-content/plugins && \
-    mkdir -p /var/www/html/wp-content/upgrade
-
-# Script per sincronitzar tema actualitzat amb volum persistent
-RUN cat > /usr/local/bin/sync-theme.sh << 'EOF'
-#!/bin/bash
-# Sincronitzar tema des del build al volum persistent
-if [ ! -d "/persistent/themes/malet-torrent" ] || [ "$FORCE_THEME_UPDATE" = "true" ]; then
-    echo "Sincronitzant tema malet-torrent..."
-    mkdir -p /persistent/themes
-    cp -rf /var/www/html/wp-content/themes/malet-torrent /persistent/themes/
-    echo "Tema sincronitzat!"
-fi
-
-# Enllaçar tema des del volum persistent
-if [ -d "/persistent/themes/malet-torrent" ]; then
-    rm -rf /var/www/html/wp-content/themes/malet-torrent
-    ln -sf /persistent/themes/malet-torrent /var/www/html/wp-content/themes/malet-torrent
-fi
-EOF
-
-chmod +x /usr/local/bin/sync-theme.sh
-
 # Configurar permisos correctes
 RUN chown -R www-data:www-data /var/www/html
 
-# Definir volums persistents
-VOLUME ["/var/www/html/wp-content/uploads", "/var/www/html/wp-content/plugins", "/persistent"]
-
-EXPOSE 80
-
-# Script d'inicialització que sincronitza tema
-RUN cat > /usr/local/bin/docker-entrypoint-persistent.sh << 'EOF'
-#!/bin/bash
-set -e
-
-# Sincronitzar tema si és necessari
-/usr/local/bin/sync-theme.sh
-
-# Executar entrypoint original de WordPress
-exec docker-entrypoint.sh "$@"
-EOF
-
-chmod +x /usr/local/bin/docker-entrypoint-persistent.sh
-
-# Usar entrypoint personalitzat que gestiona persistència
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint-persistent.sh"]
-CMD ["apache2-foreground"]
+# Definir volums persistents per plugins i uploads
+VOLUME ["/var/www/html/wp-content/uploads", "/var/www/html/wp-content/plugins"]
