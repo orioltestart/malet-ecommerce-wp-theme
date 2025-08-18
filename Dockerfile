@@ -20,8 +20,7 @@ RUN a2enmod rewrite
 # Instal·lar WP-CLI (versió estable)
 RUN curl -O https://raw.githubusercontent.com/wp-cli/wp-cli/v2.12.0/wp-cli.phar && \
     chmod +x wp-cli.phar && \
-    mv wp-cli.phar /usr/local/bin/wp && \
-    wp --info --allow-root
+    mv wp-cli.phar /usr/local/bin/wp
 
 # Crear directori del tema i copiar tots els fitxers
 RUN mkdir -p /var/www/html/wp-content/themes/malet-torrent
