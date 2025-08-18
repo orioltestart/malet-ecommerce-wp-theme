@@ -18,10 +18,10 @@ define('MALETNEXT_THEME_URL', get_template_directory_uri());
 
 // GitHub configuration for theme updates - configure in wp-config.php
 if (!defined('MALET_TORRENT_GITHUB_USER')) {
-    define('MALET_TORRENT_GITHUB_USER', '');
+    define('MALET_TORRENT_GITHUB_USER', 'orioltestart');
 }
 if (!defined('MALET_TORRENT_GITHUB_REPO')) {
-    define('MALET_TORRENT_GITHUB_REPO', '');
+    define('MALET_TORRENT_GITHUB_REPO', 'malet-ecommerce-wp-theme');
 }
 if (!defined('MALET_TORRENT_UPDATE_CHECK_INTERVAL')) {
     define('MALET_TORRENT_UPDATE_CHECK_INTERVAL', 12 * HOUR_IN_SECONDS);
