@@ -58,3 +58,8 @@ temp/
 
 # Cache
 .cache/
+
+# Credentials (local only - not pushed to git)
+CREDENTIALS.md
+credentials.txt
+wp-credentials.md
