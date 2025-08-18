@@ -25,6 +25,7 @@ COPY *.php /var/www/html/wp-content/themes/malet-torrent/
 COPY style.css /var/www/html/wp-content/themes/malet-torrent/
 COPY assets/ /var/www/html/wp-content/themes/malet-torrent/assets/
 COPY inc/ /var/www/html/wp-content/themes/malet-torrent/inc/
+COPY updater/ /var/www/html/wp-content/themes/malet-torrent/updater/
 
 # Configurar permisos
 RUN chown -R www-data:www-data /var/www/html
