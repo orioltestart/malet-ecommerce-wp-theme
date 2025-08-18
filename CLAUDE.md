@@ -170,16 +170,21 @@ CMD ["apache2-foreground"]
 
 ### Ús de WP-CLI
 ```bash
-# Entrar al contenidor
-docker exec -it malet-wp-theme-complete-9mr0ul bash
+# Entrar al contenidor (Dokploy no dona accés SSH directe)
+# Cal usar el panell de Dokploy o configurar via wp-admin
 
-# Configurar constants GitHub
-/usr/local/bin/setup-github-constants.sh
+# Configurar constants GitHub manualment via WP-CLI
+wp config set MALET_TORRENT_GITHUB_USER "orioltestart" --allow-root --path=/var/www/html
+wp config set MALET_TORRENT_GITHUB_REPO "malet-ecommerce-wp-theme" --allow-root --path=/var/www/html
+wp config set MALET_TORRENT_UPDATE_CHECK_INTERVAL 21600 --raw --allow-root --path=/var/www/html
+wp config set MALET_TORRENT_ALLOW_PRERELEASES false --raw --allow-root --path=/var/www/html
 
 # Comandos WP-CLI útils
 wp theme list --allow-root --path=/var/www/html
 wp theme activate malet-torrent --allow-root --path=/var/www/html
 wp db export backup.sql --allow-root --path=/var/www/html
+wp plugin list --allow-root --path=/var/www/html
+wp core version --allow-root --path=/var/www/html
 ```
 
 ## 🔄 Sistema d'Actualitzacions Automàtiques
@@ -265,7 +270,31 @@ docker exec -it malet-wp-theme-complete-9mr0ul /usr/local/bin/setup-github-const
 - Accés restringit a base de dades
 - Backups automàtics abans d'actualitzacions
 
+## ✅ Estat Actual del Projecte
+
+### Desplegament Resolt (18 d'agost 2025)
+- **Status**: ✅ FUNCIONANT
+- **URL**: https://wp2.malet.testart.cat/
+- **Dockerfile**: Simplificat amb WP-CLI instal·lat
+- **Desplegament**: Automàtic via GitHub webhook
+- **Theme**: malet-torrent actiu i funcional
+
+### Pendents
+- [ ] Configurar constants GitHub per actualitzacions automàtiques
+- [ ] Verificar sistema d'actualitzacions del tema
+- [ ] Configurar backup automàtic de base de dades
+
+### Instruccions per Configurar Constants GitHub
+```bash
+# Via wp-admin → Tools → WP-CLI (si està disponible) o via accés al contenidor:
+wp config set MALET_TORRENT_GITHUB_USER "orioltestart" --allow-root --path=/var/www/html
+wp config set MALET_TORRENT_GITHUB_REPO "malet-ecommerce-wp-theme" --allow-root --path=/var/www/html
+wp config set MALET_TORRENT_UPDATE_CHECK_INTERVAL 21600 --raw --allow-root --path=/var/www/html
+wp config set MALET_TORRENT_ALLOW_PRERELEASES false --raw --allow-root --path=/var/www/html
+```
+
 ---
 
 *Documentació actualitzada: 18 d'agost de 2025*
 *Generat amb Claude Code*
+*Estat: Desplegament resolt exitosament ✅*
