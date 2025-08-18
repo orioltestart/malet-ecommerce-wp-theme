@@ -61,6 +61,13 @@ if wp core is-installed --allow-root --path=/var/www/html 2>/dev/null; then
     else
         echo "ℹ️ Tema malet-torrent ja està actiu"
     fi
+    
+    # Assegurar constants GitHub sempre actualitzades
+    echo "🔧 Verificant constants GitHub per actualitzacions..."
+    wp config set MALET_TORRENT_GITHUB_USER "orioltestart" --allow-root --path=/var/www/html
+    wp config set MALET_TORRENT_GITHUB_REPO "malet-ecommerce-wp-theme" --allow-root --path=/var/www/html
+    wp config set MALET_TORRENT_UPDATE_CHECK_INTERVAL 21600 --raw --allow-root --path=/var/www/html
+    wp config set MALET_TORRENT_ALLOW_PRERELEASES false --raw --allow-root --path=/var/www/html
 else
     echo "📦 Instal·lant WordPress..."
     
@@ -103,6 +110,13 @@ else
     wp option update blogdescription "Pastisseria tradicional catalana amb melindros artesans" --allow-root --path=/var/www/html
     wp option update start_of_week 1 --allow-root --path=/var/www/html
     wp option update timezone_string "Europe/Madrid" --allow-root --path=/var/www/html
+    
+    # Configurar constants GitHub per actualitzacions automàtiques del tema
+    echo "🔧 Configurant constants GitHub per actualitzacions automàtiques..."
+    wp config set MALET_TORRENT_GITHUB_USER "orioltestart" --allow-root --path=/var/www/html
+    wp config set MALET_TORRENT_GITHUB_REPO "malet-ecommerce-wp-theme" --allow-root --path=/var/www/html
+    wp config set MALET_TORRENT_UPDATE_CHECK_INTERVAL 21600 --raw --allow-root --path=/var/www/html  # 6 hores
+    wp config set MALET_TORRENT_ALLOW_PRERELEASES false --raw --allow-root --path=/var/www/html
     
     echo "🎉 Configuració WordPress completada!"
 fi
