@@ -38,15 +38,24 @@ RUN mkdir -p /var/www/html/wp-content/uploads /var/www/html/wp-content/plugins &
 # Script per configurar permisos dels volums al iniciar
 RUN cat > /usr/local/bin/fix-volume-permissions.sh << 'EOF'
 #!/bin/bash
-# Assegurar permisos correctes per volums persistents
+# Assegurar permisos correctes per volums persistents amb permisos més permissius
+echo "Configurant permisos dels volums persistents..."
+
 if [ -d "/var/www/html/wp-content/uploads" ]; then
+    echo "Configurant permisos per uploads..."
     chown -R www-data:www-data /var/www/html/wp-content/uploads
-    chmod -R 755 /var/www/html/wp-content/uploads
+    chmod -R 775 /var/www/html/wp-content/uploads
+    echo "Permisos uploads configurats: 775"
 fi
+
 if [ -d "/var/www/html/wp-content/plugins" ]; then
+    echo "Configurant permisos per plugins..."
     chown -R www-data:www-data /var/www/html/wp-content/plugins
-    chmod -R 755 /var/www/html/wp-content/plugins
+    chmod -R 775 /var/www/html/wp-content/plugins
+    echo "Permisos plugins configurats: 775"
 fi
+
+echo "Permisos configurats correctament"
 EOF
 
 RUN chmod +x /usr/local/bin/fix-volume-permissions.sh

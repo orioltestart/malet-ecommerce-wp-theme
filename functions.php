@@ -853,8 +853,42 @@ function malet_torrent_set_default_settings() {
     if (get_option('WPLANG') == '') {
         update_option('WPLANG', 'ca');
     }
+    
+    // Crear directoris necessaris per plugins
+    malet_torrent_create_required_directories();
 }
 add_action('after_switch_theme', 'malet_torrent_set_default_settings');
+
+/**
+ * Crear directoris necessaris per plugins
+ */
+function malet_torrent_create_required_directories() {
+    $upload_dir = wp_upload_dir();
+    $base_dir = $upload_dir['basedir'];
+    
+    // Directoris necessaris per Autoptimize
+    $required_dirs = array(
+        $base_dir . '/ao_ccss',
+        $base_dir . '/autoptimize',
+        $base_dir . '/autoptimize/css',
+        $base_dir . '/autoptimize/js'
+    );
+    
+    foreach ($required_dirs as $dir) {
+        if (!file_exists($dir)) {
+            wp_mkdir_p($dir);
+            
+            // Crear fitxer index.html per seguretat
+            $index_file = $dir . '/index.html';
+            if (!file_exists($index_file)) {
+                file_put_contents($index_file, '<!-- Silence is golden. -->');
+            }
+        }
+    }
+}
+
+// Executar en init per assegurar que els directoris existeixen
+add_action('init', 'malet_torrent_create_required_directories');
 
 /**
  * Missatge d'activació del tema
