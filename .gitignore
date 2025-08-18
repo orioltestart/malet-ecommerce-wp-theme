@@ -1,39 +1,60 @@
-# WordPress específic
+# WordPress
 wp-config.php
 wp-content/uploads/
-wp-content/upgrade/
-wp-content/backup-db/
 wp-content/cache/
-wp-content/debug.log
-
-# Plugin específics
+wp-content/logs/
 *.log
-*.tmp
-*.cache
 
-# Sistema operatiu
-.DS_Store
-Thumbs.db
-
-# Editor/IDE
-.vscode/
-.idea/
-*.sublime-*
-
-# Dependències
-node_modules/
-vendor/
-
-# Builds
-dist/
-build/
-
-# Entorns locals
+# Environment files
 .env
 .env.local
 .env.production
 
+# Docker
+.docker/
+
 # Backups
+backups/
 *.sql
-*.backup
-*.bak
+*.tar.gz
+
+# Logs
+logs/
+error.log
+access.log
+
+# SSL certificates
+nginx/ssl/
+*.pem
+*.key
+*.crt
+
+# Node modules (si es fan servir per assets)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Cache
+.cache/

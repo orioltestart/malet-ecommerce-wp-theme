@@ -1,54 +1,180 @@
-# MaletWP - WordPress Backend
+# Malet Torrent WordPress Theme
 
-Repositori dedicat per tots els components de WordPress del projecte Malet Torrent.
+Tema personalitzat per a **Malet Torrent - Pastisseria Tradicional Catalana**, optimitzat per funcionar com a backend headless amb Next.js.
 
-## 📁 Contingut
+## 🔌 Sistema d'Instal·lació Automàtica de Plugins
 
-- **maletnext/**: Tema WordPress headless personalitzat amb sistema d'instal·lació automàtica de plugins
-- **Documentació**: Guies d'instal·lació, configuració de plugins i seguretat
-- **Plugins**: Plugins addicionals i configuracions
+Aquest tema inclou un sistema avançat que detecta i instal·la automàticament tots els plugins necessaris per al funcionament òptim de la botiga de melindros.
 
-## 🔌 Tema Principal: Malet Torrent Headless
-
-Tema optimitzat per funcionar com a backend API amb Next.js.
-
-### Funcionalitats del Tema:
-- ✅ **Sistema d'instal·lació automàtica de plugins**
-- ✅ **API REST optimitzada per headless**
-- ✅ **Configuració CORS automàtica**
-- ✅ **Integració WooCommerce completa**
-- ✅ **Control SEO intel·ligent per entorns**
-
-### Plugins Automàtics Inclosos:
+### Plugins Inclosos:
 - **Requerits**: WooCommerce, Contact Form 7
 - **Seguretat**: Wordfence, UpdraftPlus, Limit Login Attempts
 - **Rendiment**: Redis Cache, Autoptimize, WP Super Cache
 - **SEO**: Rank Math SEO
 - **Experimentals**: WordPress MCP Server
 
-## 📋 Instal·lació
+### Funcionalitats del Sistema:
+- ✅ **Instal·lació amb un clic** de tots els plugins essencials
+- ✅ **Activació automàtica** dels plugins crítics
+- ✅ **Configuració post-activació** automàtica
+- ✅ **Avisos intel·ligents** a l'admin dashboard
+- ✅ **Progrés visual** amb barres d'estat
+- ✅ **Compatible 100%** amb WordPress.org
 
-1. **Instal·lar WordPress** 5.0+ amb PHP 7.4+
-2. **Pujar el tema** des de `malet-torrent-headless-theme-complete.zip`
-3. **Activar el tema** Malet Torrent
-4. **Seguir els avisos** d'instal·lació automàtica de plugins
-5. **Configurar** a Aparença > Malet Torrent
+## 🎯 Característiques
 
-## 🔗 Integració
+### 🚀 Optimització Headless
+- **API REST millorada** amb endpoints personalitzats
+- **CORS configurat** per peticions des de Next.js
+- **Suport WooCommerce** amb camps adicionals per l'API
+- **Endpoints personalitzats** per configuració i menús
 
-Aquest backend està dissenyat per funcionar amb:
-- **Frontend**: MaletNext (Next.js 15)
-- **API**: REST API de WordPress/WooCommerce
-- **Producció**: Domain específic amb CORS configurat
+### 🛍️ E-commerce
+- **Integració WooCommerce** completa
+- **Productes destacats** amb endpoint específic
+- **Informació de stock** detallada
+- **Categories amb metadades** adicionals
 
-## 📖 Documentació
+### 🌐 API Endpoints
 
-- `PLUGIN_INSTALLER_GUIDE.md` - Guia completa del sistema d'instal·lació
-- `SECURITY_PLUGINS_GUIDE.md` - Configuració de plugins de seguretat
-- `PLUGINS_INSTALLED.md` - Llista de plugins i estat
-- `INSTRUCTIONS_TEMA_ENHANCED.md` - Instruccions del tema
-- `INSTRUCTIONS_TEMA_WORDPRESS.md` - Configuració WordPress
+#### WordPress Estàndard
+- `/wp-json/wp/v2/` - Posts, pàgines, media
+- `/wp-json/wc/v3/` - WooCommerce API completa
+- `/wp-json/wc/store/v1/` - Store API per carret
+
+#### Malet Torrent Personalitzats
+- `/wp-json/malet-torrent/v1/config` - Configuració del lloc
+- `/wp-json/malet-torrent/v1/menus/{location}` - Menús per ubicació
+- `/wp-json/malet-torrent/v1/products/featured` - Productes destacats
+- `/wp-json/malet-torrent/v1/woocommerce/config` - Configuració WooCommerce
+
+### 🎨 Interfície Admin
+- **Pàgina de configuració** específica del tema
+- **Dashboard informatiu** amb estat de l'API
+- **Enllaços ràpids** a funcions principals
+- **Avisos d'activació** i configuració
+
+## 📦 Instal·lació
+
+1. **Descarrega** el fitxer ZIP del tema
+2. **Pujar al WordPress**: Aparença > Temes > Afegir nou > Pujar tema
+3. **Activar** el tema Malet Torrent
+4. **Configurar**: Aparença > Malet Torrent per accedir a la configuració
+
+## ⚙️ Configuració
+
+### Requisits
+- WordPress 5.0+
+- WooCommerce 5.0+ (per e-commerce)
+- PHP 7.4+
+- Permalinks activats
+
+### Configuració Recomanada
+1. **Permalinks**: Configuració > Enllaços permanents > Nom de l'entrada
+2. **WooCommerce**: Instal·lar i configurar WooCommerce
+3. **API Keys**: Generar claus API per Next.js
+4. **CORS**: Automàticament configurat pel tema
+
+## 🔧 Desenvolupament
+
+### Estructura del Tema
+```
+malet-torrent/
+├── style.css          # Informació del tema + estils admin
+├── index.php          # Pàgina principal headless
+├── functions.php      # Funcions principals i API
+├── header.php         # Header HTML mínim
+├── footer.php         # Footer HTML mínim
+├── single.php         # Template per articles individuals
+├── archive.php        # Template per arxius
+├── 404.php           # Pàgina d'error personalitzada
+└── README.md         # Aquesta documentació
+```
+
+### Funcions Principals
+
+#### `malet-torrent_enhance_woocommerce_api()`
+Afegeix camps adicionals a l'API de WooCommerce:
+- ACF fields
+- Informació de stock detallada
+- Categories amb metadades
+
+#### `malet-torrent_register_custom_endpoints()`
+Registra endpoints personalitzats per:
+- Configuració del lloc
+- Menús de navegació
+- Productes destacats
+- Configuració WooCommerce
+
+#### `malet-torrent_add_cors_support()`
+Configura CORS per permetre peticions des de:
+- malet.testart.cat (producció)
+- localhost:3000 (desenvolupament)
+
+## 🌐 Integració amb Next.js
+
+### Variables d'Entorn Necessàries
+```bash
+# WordPress API
+WORDPRESS_URL=https://wp.malet.testart.cat
+NEXT_PUBLIC_WORDPRESS_URL=https://wp.malet.testart.cat
+NEXT_PUBLIC_API_URL=https://wp.malet.testart.cat/wp-json
+
+# WooCommerce API
+WOOCOMMERCE_CONSUMER_KEY=ck_...
+WOOCOMMERCE_CONSUMER_SECRET=cs_...
+```
+
+### Exemples d'Ús
+
+#### Obtenir Configuració del Lloc
+```javascript
+const config = await fetch('/wp-json/malet-torrent/v1/config')
+  .then(res => res.json());
+```
+
+#### Obtenir Productes Destacats
+```javascript
+const featured = await fetch('/wp-json/malet-torrent/v1/products/featured?per_page=8')
+  .then(res => res.json());
+```
+
+#### Obtenir Menú Principal
+```javascript
+const menu = await fetch('/wp-json/malet-torrent/v1/menus/primary')
+  .then(res => res.json());
+```
+
+## 🔒 Seguretat
+
+- **CORS configurat** per dominis específics
+- **Validació d'entrada** en endpoints personalitzats
+- **Permisos adequats** per cada endpoint
+- **Headers de seguretat** configurats
+
+## 📞 Suport
+
+- **Tema desenvolupat per**: Malet Torrent
+- **Versió**: 1.0.0
+- **Compatibilitat**: WordPress 5.0+, WooCommerce 5.0+
+- **Llicència**: GPL v2 or later
+
+## 🚀 Desplegament
+
+1. **Desenvolupament Local**: Utilitzar amb docker-compose.local.yml
+2. **Staging**: Configurar amb subdomini de prova
+3. **Producció**: Desplegar a wp.malet.testart.cat
+
+### Checklist de Desplegament
+- [ ] WordPress instal·lat i configurat
+- [ ] WooCommerce instal·lat
+- [ ] Tema Malet Torrent activat
+- [ ] Claus API generades
+- [ ] SSL configurat
+- [ ] Permalinks activats
+- [ ] Productes de mostra creats
+- [ ] Next.js configurat i connectat
 
 ---
 
-**🥨 Malet Torrent - Backend WordPress Professional**
+**🥨 Fet amb amor per la pastisseria tradicional catalana**

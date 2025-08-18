@@ -1,0 +1,751 @@
+/**
+ * Admin Notices CSS for Malet Torrent Theme
+ * Styles for plugin installation notices
+ * 
+ * @package Malet Torrent
+ * @since 1.0.0
+ */
+
+/* Notice Container */
+.malet-torrent-notice {
+    border-left: 4px solid #72aee6;
+    padding: 0;
+    margin: 20px 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.malet-torrent-notice.notice-error {
+    border-left-color: #d63638;
+}
+
+.malet-torrent-notice.notice-warning {
+    border-left-color: #dba617;
+}
+
+.malet-torrent-notice.notice-info {
+    border-left-color: #72aee6;
+}
+
+/* Notice Header */
+.malet-torrent-notice-header {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e1e1e1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+
+.malet-torrent-notice-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.malet-torrent-notice-header .dashicons {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+}
+
+.notice-error .malet-torrent-notice-header .dashicons {
+    color: #d63638;
+}
+
+.notice-warning .malet-torrent-notice-header .dashicons {
+    color: #dba617;
+}
+
+.notice-info .malet-torrent-notice-header .dashicons {
+    color: #72aee6;
+}
+
+/* Notice Content */
+.malet-torrent-notice-content {
+    padding: 20px;
+}
+
+.malet-torrent-notice-content p {
+    margin: 0 0 15px 0;
+    line-height: 1.6;
+}
+
+/* Plugins List */
+.malet-torrent-plugins-list {
+    margin: 20px 0;
+    display: grid;
+    gap: 15px;
+}
+
+.malet-torrent-plugins-list.optional.collapsed {
+    display: none;
+}
+
+.malet-torrent-plugins-list.recommended {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+}
+
+/* Plugin Item */
+.malet-torrent-plugin-item {
+    background: #fff;
+    border: 1px solid #e1e1e1;
+    border-radius: 6px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.malet-torrent-plugin-item:hover {
+    border-color: #72aee6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.malet-torrent-plugin-item.plugin-activated {
+    background: #f0f8ff;
+    border-color: #00a32a;
+}
+
+.malet-torrent-plugin-item.plugin-activated::before {
+    content: '\f147';
+    font-family: dashicons;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #00a32a;
+    font-size: 16px;
+}
+
+/* Plugin Info */
+.plugin-info {
+    flex: 1;
+}
+
+.plugin-info h4 {
+    margin: 0 0 8px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.plugin-info p {
+    margin: 0 0 12px 0;
+    color: #646970;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.plugin-features {
+    margin-top: 10px;
+}
+
+.plugin-features ul {
+    margin: 0;
+    padding-left: 16px;
+    list-style: none;
+}
+
+.plugin-features li {
+    position: relative;
+    font-size: 12px;
+    color: #646970;
+    margin-bottom: 4px;
+}
+
+.plugin-features li::before {
+    content: '\f147';
+    font-family: dashicons;
+    position: absolute;
+    left: -16px;
+    color: #00a32a;
+    font-size: 12px;
+}
+
+/* Plugin Actions */
+.plugin-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+    min-width: 120px;
+}
+
+.plugin-actions .button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    min-width: 100px;
+    justify-content: center;
+}
+
+.plugin-actions .button .dashicons {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+}
+
+/* Plugin Status */
+.plugin-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    min-height: 20px;
+}
+
+.plugin-status .status-text {
+    font-weight: 500;
+}
+
+.plugin-status .spinner {
+    float: none;
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    background-size: 16px 16px;
+}
+
+/* Status Colors */
+.status-installing .status-text,
+.status-activating .status-text {
+    color: #72aee6;
+}
+
+.status-success .status-text {
+    color: #00a32a;
+}
+
+.status-error .status-text {
+    color: #d63638;
+}
+
+.status-waiting .status-text {
+    color: #dba617;
+}
+
+/* Bulk Actions */
+.malet-torrent-bulk-actions {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #e1e1e1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.malet-torrent-bulk-actions .button-large {
+    padding: 8px 20px;
+    height: auto;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    align-self: flex-start;
+}
+
+/* Progress Bar */
+.bulk-progress {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #e1e1e1;
+    border-radius: 4px;
+    overflow: hidden;
+    max-width: 300px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #72aee6, #0073aa);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d2327;
+    min-width: 35px;
+}
+
+/* Toggle Button */
+.malet-torrent-toggle {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.toggle-optional-plugins {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+}
+
+.toggle-optional-plugins:hover {
+    color: #0073aa;
+}
+
+.toggle-optional-plugins .dashicons {
+    transition: transform 0.3s ease;
+}
+
+/* Success Notice */
+.malet-torrent-success-notice {
+    border-left-color: #00a32a !important;
+    padding: 20px;
+}
+
+.malet-torrent-success-notice h3 {
+    margin: 0 0 15px 0;
+    color: #00a32a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.malet-torrent-success-notice .dashicons {
+    color: #00a32a;
+}
+
+/* Notice Dismiss Button */
+.malet-torrent-dismiss {
+    background: none;
+    border: none;
+    color: #646970;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.malet-torrent-dismiss:hover {
+    background: #f0f0f1;
+    color: #1d2327;
+}
+
+.malet-torrent-dismiss:focus {
+    outline: 2px solid #72aee6;
+    outline-offset: 2px;
+}
+
+/* Completed State */
+.all-plugins-completed {
+    animation: fadeOutScale 2s ease-in-out forwards;
+}
+
+@keyframes fadeOutScale {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    80% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 782px) {
+    .malet-torrent-notice-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .malet-torrent-plugins-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .malet-torrent-plugin-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .plugin-actions {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .malet-torrent-bulk-actions .button-large {
+        align-self: stretch;
+        text-align: center;
+    }
+    
+    .bulk-progress {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .progress-bar {
+        max-width: none;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .malet-torrent-plugin-item {
+        border-width: 2px;
+    }
+    
+    .malet-torrent-plugin-item:hover {
+        border-width: 3px;
+    }
+    
+    .progress-fill {
+        background: #0073aa;
+    }
+}
+
+/* Theme Update Notice Styles */
+.malet-torrent-update-notice {
+    border-left: 4px solid #dba617;
+    padding: 0;
+    margin: 20px 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.malet-torrent-update-notice .notice-dismiss {
+    display: block;
+}
+
+/* Update Version Information */
+.update-version-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border: 1px solid #e1e1e1;
+}
+
+.update-version-info p {
+    margin: 0;
+    font-size: 15px;
+    color: #1d2327;
+}
+
+/* Update Status Badge */
+.update-status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.update-status-badge.available {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.update-status-badge.up-to-date {
+    background: #d1edff;
+    color: #004085;
+    border: 1px solid #bee5eb;
+}
+
+/* Changelog Preview */
+.update-changelog {
+    background: #fff;
+    border: 1px solid #e1e1e1;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 20px 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.update-changelog h4 {
+    margin: 0 0 15px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.update-changelog h4::before {
+    content: '\f348';
+    font-family: dashicons;
+    color: #72aee6;
+    font-size: 16px;
+}
+
+.changelog-content {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #646970;
+}
+
+.changelog-content h2,
+.changelog-content h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+    margin: 15px 0 8px 0;
+}
+
+.changelog-content ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.changelog-content li {
+    margin-bottom: 4px;
+}
+
+/* Backup Reminder */
+.backup-reminder {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.backup-reminder p {
+    margin: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: #856404;
+    font-size: 13px;
+}
+
+.backup-reminder .dashicons {
+    color: #dba617;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Update Actions */
+.malet-torrent-update-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #e1e1e1;
+}
+
+.malet-torrent-update-actions .button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.malet-torrent-update-actions .button .dashicons {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+}
+
+.malet-torrent-update-actions .button-large {
+    padding: 8px 20px;
+    height: auto;
+    font-size: 14px;
+}
+
+/* Update Progress */
+.update-progress {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.update-progress .progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #e1e1e1;
+    border-radius: 4px;
+    overflow: hidden;
+    max-width: 200px;
+}
+
+.update-progress .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #dba617, #b8860b);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.update-progress .progress-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d2327;
+    min-width: 35px;
+}
+
+/* Update Meta Information */
+.update-meta {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f1;
+}
+
+.update-meta p {
+    margin: 0;
+    color: #646970;
+}
+
+/* Theme Update Status in Settings */
+.theme-update-status {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.theme-update-status p {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.check-theme-updates {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.check-theme-updates .dashicons {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+}
+
+/* Update Success Notice */
+.malet-torrent-update-notice.notice-success {
+    border-left-color: #00a32a;
+}
+
+.malet-torrent-update-notice.notice-success .malet-torrent-notice-header .dashicons {
+    color: #00a32a;
+}
+
+/* Loading States */
+.update-checking .check-theme-updates {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.update-checking .check-theme-updates::after {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-left: 8px;
+    border: 2px solid #72aee6;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.update-installing .install-theme-update {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error States */
+.update-error {
+    background: #ffeaea;
+    border: 1px solid #ffb3b3;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 15px 0;
+    color: #d63638;
+    font-size: 13px;
+}
+
+.update-error .dashicons {
+    color: #d63638;
+    margin-right: 8px;
+}
+
+/* Responsive Updates */
+@media (max-width: 782px) {
+    .malet-torrent-update-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .malet-torrent-update-actions .button {
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .update-progress {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .update-progress .progress-bar {
+        max-width: none;
+    }
+    
+    .theme-update-status {
+        gap: 15px;
+    }
+    
+    .check-theme-updates {
+        align-self: stretch;
+        justify-content: center;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .malet-torrent-plugin-item,
+    .progress-fill,
+    .toggle-optional-plugins .dashicons,
+    .all-plugins-completed,
+    .update-progress .progress-fill {
+        transition: none;
+        animation: none;
+    }
+    
+    .update-checking .check-theme-updates::after {
+        animation: none;
+    }
+}
