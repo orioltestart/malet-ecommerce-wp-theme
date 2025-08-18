@@ -16,21 +16,23 @@ define('MALETNEXT_VERSION', '1.0.0');
 define('MALETNEXT_THEME_DIR', get_template_directory());
 define('MALETNEXT_THEME_URL', get_template_directory_uri());
 
-// GitHub configuration for theme updates - configure in wp-config.php
+// GitHub configuration for theme updates - support .env variables
 if (!defined('MALET_TORRENT_GITHUB_USER')) {
-    define('MALET_TORRENT_GITHUB_USER', 'orioltestart');
+    define('MALET_TORRENT_GITHUB_USER', $_ENV['MALET_TORRENT_GITHUB_USER'] ?? 'orioltestart');
 }
 if (!defined('MALET_TORRENT_GITHUB_REPO')) {
-    define('MALET_TORRENT_GITHUB_REPO', 'malet-ecommerce-wp-theme');
+    define('MALET_TORRENT_GITHUB_REPO', $_ENV['MALET_TORRENT_GITHUB_REPO'] ?? 'malet-ecommerce-wp-theme');
 }
 if (!defined('MALET_TORRENT_UPDATE_CHECK_INTERVAL')) {
-    define('MALET_TORRENT_UPDATE_CHECK_INTERVAL', 12 * HOUR_IN_SECONDS);
+    define('MALET_TORRENT_UPDATE_CHECK_INTERVAL', (int)($_ENV['MALET_TORRENT_UPDATE_CHECK_INTERVAL'] ?? 12) * HOUR_IN_SECONDS);
 }
 if (!defined('MALET_TORRENT_ALLOW_PRERELEASES')) {
-    define('MALET_TORRENT_ALLOW_PRERELEASES', false);
+    define('MALET_TORRENT_ALLOW_PRERELEASES', filter_var($_ENV['MALET_TORRENT_ALLOW_PRERELEASES'] ?? false, FILTER_VALIDATE_BOOLEAN));
 }
-// Optional GitHub token for higher API rate limits - configure in wp-config.php
-// define('MALET_TORRENT_GITHUB_TOKEN', 'your-github-token');
+// GitHub token for private repository access - configure via .env or wp-config.php
+if (!defined('MALET_TORRENT_GITHUB_TOKEN')) {
+    define('MALET_TORRENT_GITHUB_TOKEN', $_ENV['MALET_TORRENT_GITHUB_TOKEN'] ?? '');
+}
 
 /**
  * Configuració inicial del tema
@@ -145,6 +147,11 @@ function malet_torrent_init_updater_system() {
  * Basat en mu-plugins/cors.php amb millores de seguretat
  */
 function malet_torrent_add_cors_support() {
+    // Verificar que no s'han enviat headers ja
+    if (headers_sent()) {
+        return;
+    }
+    
     // Orígens permesos
     $allowed_origins = array(
         'http://localhost:3000',
@@ -280,6 +287,11 @@ function malet_torrent_block_robots() {
  * Afegir header X-Robots-Tag
  */
 function malet_torrent_add_robots_header() {
+    // Verificar que no s'han enviat headers ja
+    if (headers_sent()) {
+        return;
+    }
+    
     $is_production = defined('WP_ENV') && WP_ENV === 'production';
     $domain = $_SERVER['HTTP_HOST'] ?? '';
     $is_local = strpos($domain, 'localhost') !== false;

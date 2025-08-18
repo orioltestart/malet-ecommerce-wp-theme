@@ -30,8 +30,44 @@ COPY assets/ /var/www/html/wp-content/themes/malet-torrent/assets/
 COPY inc/ /var/www/html/wp-content/themes/malet-torrent/inc/
 COPY updater/ /var/www/html/wp-content/themes/malet-torrent/updater/
 
-# Configurar permisos correctes
-RUN chown -R www-data:www-data /var/www/html
+# Crear directoris per volums persistents amb permisos correctes
+RUN mkdir -p /var/www/html/wp-content/uploads /var/www/html/wp-content/plugins && \
+    chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html/wp-content
+
+# Script per configurar permisos dels volums al iniciar
+RUN cat > /usr/local/bin/fix-volume-permissions.sh << 'EOF'
+#!/bin/bash
+# Assegurar permisos correctes per volums persistents
+if [ -d "/var/www/html/wp-content/uploads" ]; then
+    chown -R www-data:www-data /var/www/html/wp-content/uploads
+    chmod -R 755 /var/www/html/wp-content/uploads
+fi
+if [ -d "/var/www/html/wp-content/plugins" ]; then
+    chown -R www-data:www-data /var/www/html/wp-content/plugins
+    chmod -R 755 /var/www/html/wp-content/plugins
+fi
+EOF
+
+RUN chmod +x /usr/local/bin/fix-volume-permissions.sh
 
 # Definir volums persistents per plugins i uploads
 VOLUME ["/var/www/html/wp-content/uploads", "/var/www/html/wp-content/plugins"]
+
+# Executar script de permisos i després docker-entrypoint.sh original
+RUN cat > /usr/local/bin/docker-entrypoint-with-permissions.sh << 'EOF'
+#!/bin/bash
+set -e
+
+# Executar script de permisos
+/usr/local/bin/fix-volume-permissions.sh
+
+# Executar entrypoint original de WordPress
+exec docker-entrypoint.sh "$@"
+EOF
+
+RUN chmod +x /usr/local/bin/docker-entrypoint-with-permissions.sh
+
+# Usar entrypoint personalitzat
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint-with-permissions.sh"]
+CMD ["apache2-foreground"]
