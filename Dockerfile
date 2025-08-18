@@ -30,25 +30,7 @@ COPY assets/ /var/www/html/wp-content/themes/malet-torrent/assets/
 COPY inc/ /var/www/html/wp-content/themes/malet-torrent/inc/
 COPY updater/ /var/www/html/wp-content/themes/malet-torrent/updater/
 
-# Script opcional per configurar constants GitHub (no bloquejant)
-RUN cat > /usr/local/bin/setup-github-constants.sh << 'EOF'
-#!/bin/bash
-# Script opcional per configurar constants GitHub
-# Execució manual: docker exec -it container_name /usr/local/bin/setup-github-constants.sh
-
-if [ -f /var/www/html/wp-config.php ] && wp core is-installed --allow-root --path=/var/www/html 2>/dev/null; then
-    echo "Configurant constants GitHub per actualitzacions automàtiques..."
-    wp config set MALET_TORRENT_GITHUB_USER "orioltestart" --allow-root --path=/var/www/html 2>/dev/null || echo "Error configurant GITHUB_USER"
-    wp config set MALET_TORRENT_GITHUB_REPO "malet-ecommerce-wp-theme" --allow-root --path=/var/www/html 2>/dev/null || echo "Error configurant GITHUB_REPO"
-    wp config set MALET_TORRENT_UPDATE_CHECK_INTERVAL 21600 --raw --allow-root --path=/var/www/html 2>/dev/null || echo "Error configurant UPDATE_CHECK_INTERVAL"
-    wp config set MALET_TORRENT_ALLOW_PRERELEASES false --raw --allow-root --path=/var/www/html 2>/dev/null || echo "Error configurant ALLOW_PRERELEASES"
-    echo "Constants GitHub configurades correctament!"
-else
-    echo "WordPress no està instal·lat. Instal·la WordPress primer."
-fi
-EOF
-
-chmod +x /usr/local/bin/setup-github-constants.sh
+# Comentari: Constants GitHub es configuraran manualment via WP-CLI després del desplegament
 
 # Configurar permisos correctes
 RUN chown -R www-data:www-data /var/www/html
