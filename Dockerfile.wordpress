@@ -1,27 +1,23 @@
-FROM wordpress:6.8-php8.3-fpm-alpine
+FROM wordpress:6.8-apache
 
 # Instal·lar dependències del sistema
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     curl \
     wget \
     git \
     unzip \
-    bash \
     less \
-    mysql-client \
+    default-mysql-client \
     imagemagick \
-    imagemagick-dev \
+    libmagickwand-dev \
     libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
     libzip-dev \
-    icu-dev \
-    oniguruma-dev \
+    libicu-dev \
+    libonig-dev \
     libxml2-dev \
-    autoconf \
-    g++ \
-    make \
-    && rm -rf /var/cache/apk/*
+    && rm -rf /var/lib/apt/lists/*
 
 # Configurar extensions PHP
 RUN docker-php-ext-configure gd \
@@ -48,96 +44,32 @@ RUN pecl install redis \
 RUN pecl install imagick \
     && docker-php-ext-enable imagick
 
-# Configuració PHP optimitzada per producció
-COPY <<EOF /usr/local/etc/php/conf.d/custom.ini
-# Memory and execution
-memory_limit = 256M
-max_execution_time = 300
-max_input_time = 300
-max_input_vars = 3000
-
-# File uploads
-upload_max_filesize = 64M
-post_max_size = 64M
-file_uploads = On
-
-# Session
-session.gc_maxlifetime = 3600
-session.save_handler = redis
-session.save_path = "tcp://redis:6379?auth=${REDIS_PASSWORD}"
-
-# OPcache
-opcache.enable = 1
-opcache.enable_cli = 1
-opcache.memory_consumption = 128
-opcache.interned_strings_buffer = 8
-opcache.max_accelerated_files = 4000
-opcache.revalidate_freq = 2
-opcache.fast_shutdown = 1
-
-# Security
-expose_php = Off
-allow_url_fopen = Off
-allow_url_include = Off
-display_errors = Off
-log_errors = On
-error_log = /var/log/php_errors.log
-
-# Date
-date.timezone = Europe/Madrid
-EOF
+# Configuració PHP
+RUN echo "memory_limit = 256M" > /usr/local/etc/php/conf.d/memory-limit.ini \
+    && echo "upload_max_filesize = 64M" > /usr/local/etc/php/conf.d/upload.ini \
+    && echo "post_max_size = 64M" >> /usr/local/etc/php/conf.d/upload.ini \
+    && echo "max_execution_time = 300" > /usr/local/etc/php/conf.d/execution.ini
 
 # Instal·lar WP-CLI
 RUN curl -O https://raw.githubusercontent.com/wp-cli/wp-cli/v2.12.0/wp-cli.phar \
     && chmod +x wp-cli.phar \
     && mv wp-cli.phar /usr/local/bin/wp
 
-# Crear usuari no-root
-RUN addgroup -g 1000 wordpress \
-    && adduser -u 1000 -G wordpress -s /bin/bash -D wordpress
+# Crear directori del tema
+RUN mkdir -p /var/www/html/wp-content/themes/malet-torrent
 
-# Crear directoris necessaris
-RUN mkdir -p /var/www/html/wp-content/themes \
-    && mkdir -p /var/www/html/wp-content/uploads \
-    && mkdir -p /var/log \
-    && chown -R wordpress:wordpress /var/www/html \
-    && chown -R wordpress:wordpress /var/log
+# Copiar fitxers del tema
+COPY . /var/www/html/wp-content/themes/malet-torrent/
 
-# Configurar WordPress
-COPY --chown=wordpress:wordpress . /var/www/html/wp-content/themes/malet-torrent/
+# Configurar permisos
+RUN chown -R www-data:www-data /var/www/html
 
-# Script d'inicialització personalitzat
-COPY <<'EOF' /usr/local/bin/docker-entrypoint-custom.sh
-#!/bin/bash
-set -euo pipefail
+# Habilitar mod_rewrite
+RUN a2enmod rewrite
 
-# Esperar base de dades
-echo "Esperant la base de dades..."
-while ! mysqladmin ping -h"$WORDPRESS_DB_HOST" --silent; do
-    sleep 1
-done
+# Exposar port
+EXPOSE 80
 
-# Configurar theme malet-torrent com actiu
-if [[ -f /var/www/html/wp-config.php ]]; then
-    echo "Activant tema malet-torrent..."
-    wp theme activate malet-torrent --allow-root || echo "Error activant tema"
-fi
-
-# Executar el entrypoint original
-exec docker-entrypoint.sh "$@"
-EOF
-
-RUN chmod +x /usr/local/bin/docker-entrypoint-custom.sh
-
-# Configurar healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:9000/ping || exit 1
-
-# Exposar port PHP-FPM
-EXPOSE 9000
-
-# Canviar a usuari no-root
-USER wordpress
-
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint-custom.sh"]
-CMD ["php-fpm"]
+# Usar entrypoint estàndard
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["apache2-foreground"]
