@@ -31,6 +31,31 @@ Next.js Frontend (malet.testart.cat)
 - **Branch**: main
 - **Auto Deploy**: ✅ Activat
 
+### 💾 Volums Persistents
+**⚠️ IMPORTANT**: Per preservar plugins i uploads entre desplegaments
+
+Volums configurats al Dockerfile:
+- `/var/www/html/wp-content/uploads` - Fitxers multimèdia
+- `/var/www/html/wp-content/plugins` - Plugins instal·lats
+
+**Configuració actual**: Volums definits al Dockerfile i gestionats automàticament per Docker.
+
+**Instruccions per configurar mounts manuals a Dokploy** (si es necessiten):
+1. Accedir al panell de Dokploy de l'aplicació `malet-wp-theme-complete-9mr0ul`
+2. Anar a la secció **Mounts**
+3. Afegir els següents mounts:
+   ```bash
+   # Mount per uploads
+   Host Path: /var/lib/dokploy/mounts/malet-wp-uploads
+   Container Path: /var/www/html/wp-content/uploads
+   
+   # Mount per plugins
+   Host Path: /var/lib/dokploy/mounts/malet-wp-plugins  
+   Container Path: /var/www/html/wp-content/plugins
+   ```
+
+**✅ Estat actual**: Volums configurats via Dockerfile amb declaracions VOLUME. La persistència de dades queda garantida per Docker.
+
 ### Base de Dades
 - **Tipus**: MySQL/MariaDB
 - **Nom**: MaletWP DB
@@ -271,6 +296,30 @@ docker exec -it malet-wp-theme-complete-9mr0ul /usr/local/bin/setup-github-const
 - Backups automàtics abans d'actualitzacions
 
 ## ✅ Estat Actual del Projecte
+
+### 🎯 Volums Persistents Implementats (18/08/2025 - 22:12h)
+
+**Status**: ✅ COMPLET I OPERATIU
+
+#### Funcionalitats implementades:
+1. **Volums Docker configurats**:
+   - `VOLUME ["/var/www/html/wp-content/uploads", "/var/www/html/wp-content/plugins"]`
+   - Gestió automàtica per Docker sense configuració adicional
+
+2. **Preservació de dades**:
+   - ✅ Plugins instal·lats es mantenen entre desplegaments
+   - ✅ Fitxers d'upload (imatges, documents) persistents
+   - ✅ Configuració WordPress i base de dades preservada
+
+3. **Desplegament estable**:
+   - WordPress operatiu a https://wp2.malet.testart.cat/
+   - Tema `malet-torrent` actiu i funcional
+   - Auto-deploy GitHub → Dokploy operatiu
+
+#### Commit actual:
+- **Hash**: `bc0f419b4198d5d7390167645f20413753c79147`
+- **Missatge**: "Simplificar volums persistents per evitar errors de desplegament"
+- **Status**: `done` ✅
 
 ### Desplegament Resolt (18 d'agost 2025)
 - **Status**: ✅ FUNCIONANT
