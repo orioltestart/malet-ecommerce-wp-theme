@@ -6,10 +6,10 @@ services:
     container_name: malet_db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-RootSecurePass2024!}
-      MYSQL_DATABASE: ${DB_NAME:-malet_torrent}
-      MYSQL_USER: ${DB_USER:-malet_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-MaletSecurePass2024!}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
     networks:
@@ -19,7 +19,7 @@ services:
     image: redis:7-alpine
     container_name: malet_redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-RedisSecurePass2024!}
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     networks:
@@ -35,29 +35,48 @@ services:
       - db
       - redis
     environment:
+      # Variables de Base de Dades
       WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_NAME: ${DB_NAME:-malet_torrent}
-      WORDPRESS_DB_USER: ${DB_USER:-malet_user}
-      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:-MaletSecurePass2024!}
-      WORDPRESS_AUTH_KEY: ${WORDPRESS_AUTH_KEY:-put_your_unique_phrase_here_auth_key_123456}
-      WORDPRESS_SECURE_AUTH_KEY: ${WORDPRESS_SECURE_AUTH_KEY:-put_your_unique_phrase_here_secure_auth_key_123456}
-      WORDPRESS_LOGGED_IN_KEY: ${WORDPRESS_LOGGED_IN_KEY:-put_your_unique_phrase_here_logged_in_key_123456}
-      WORDPRESS_NONCE_KEY: ${WORDPRESS_NONCE_KEY:-put_your_unique_phrase_here_nonce_key_123456}
-      WORDPRESS_AUTH_SALT: ${WORDPRESS_AUTH_SALT:-put_your_unique_phrase_here_auth_salt_123456}
-      WORDPRESS_SECURE_AUTH_SALT: ${WORDPRESS_SECURE_AUTH_SALT:-put_your_unique_phrase_here_secure_auth_salt_123456}
-      WORDPRESS_LOGGED_IN_SALT: ${WORDPRESS_LOGGED_IN_SALT:-put_your_unique_phrase_here_logged_in_salt_123456}
-      WORDPRESS_NONCE_SALT: ${WORDPRESS_NONCE_SALT:-put_your_unique_phrase_here_nonce_salt_123456}
-      WORDPRESS_TABLE_PREFIX: ${WORDPRESS_TABLE_PREFIX:-wp_}
-      WORDPRESS_DEBUG: ${WORDPRESS_DEBUG:-false}
-      WP_SITEURL: ${WP_SITEURL:-https://wp.malet.testart.cat}
-      WP_HOME: ${WP_HOME:-https://wp.malet.testart.cat}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      
+      # Claus de Seguretat WordPress
+      WORDPRESS_AUTH_KEY: ${WORDPRESS_AUTH_KEY}
+      WORDPRESS_SECURE_AUTH_KEY: ${WORDPRESS_SECURE_AUTH_KEY}
+      WORDPRESS_LOGGED_IN_KEY: ${WORDPRESS_LOGGED_IN_KEY}
+      WORDPRESS_NONCE_KEY: ${WORDPRESS_NONCE_KEY}
+      WORDPRESS_AUTH_SALT: ${WORDPRESS_AUTH_SALT}
+      WORDPRESS_SECURE_AUTH_SALT: ${WORDPRESS_SECURE_AUTH_SALT}
+      WORDPRESS_LOGGED_IN_SALT: ${WORDPRESS_LOGGED_IN_SALT}
+      WORDPRESS_NONCE_SALT: ${WORDPRESS_NONCE_SALT}
+      WORDPRESS_TABLE_PREFIX: ${WORDPRESS_TABLE_PREFIX}
+      WORDPRESS_DEBUG: ${WORDPRESS_DEBUG}
+      
+      # Variables d'Instalació WordPress
+      WORDPRESS_URL: ${WORDPRESS_URL}
+      WORDPRESS_TITLE: ${WORDPRESS_TITLE}
+      WORDPRESS_ADMIN_USER: ${WORDPRESS_ADMIN_USER}
+      WORDPRESS_ADMIN_PASSWORD: ${WORDPRESS_ADMIN_PASSWORD}
+      WORDPRESS_ADMIN_EMAIL: ${WORDPRESS_ADMIN_EMAIL}
+      
+      # Variables GitHub per Actualitzacions
+      MALET_TORRENT_GITHUB_USER: ${MALET_TORRENT_GITHUB_USER}
+      MALET_TORRENT_GITHUB_REPO: ${MALET_TORRENT_GITHUB_REPO}
+      MALET_TORRENT_UPDATE_CHECK_INTERVAL: ${MALET_TORRENT_UPDATE_CHECK_INTERVAL}
+      MALET_TORRENT_ALLOW_PRERELEASES: ${MALET_TORRENT_ALLOW_PRERELEASES}
+      
+      # Variables del Tema
+      WORDPRESS_THEME_NAME: ${WORDPRESS_THEME_NAME}
     volumes:
       - wordpress_data:/var/www/html
-      - uploads_data:/var/www/html/wp-content/uploads
+      - wp_content_data:/var/www/html/wp-content
+      # Bind mount del tema per desenvolupament en viu
+      - ./:/var/www/html/wp-content/themes/malet-torrent
     networks:
       - malet_network
     ports:
-      - "${WORDPRESS_PORT:-8080}:80"
+      - "${WORDPRESS_PORT}:80"
 
 
 volumes:
@@ -67,7 +86,7 @@ volumes:
     driver: local
   wordpress_data:
     driver: local
-  uploads_data:
+  wp_content_data:
     driver: local
 
 networks:
