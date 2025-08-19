@@ -53,7 +53,13 @@ if [ -d "/var/www/html/wp-content" ]; then
     if [ -d "/var/www/html/wp-content/uploads" ]; then
         echo "Configurant permisos especials per uploads..."
         chmod -R 777 /var/www/html/wp-content/uploads
-        echo "Permisos uploads configurats: 777"
+        
+        # Crear directori específic per Autoptimize amb permisos correctes
+        mkdir -p /var/www/html/wp-content/uploads/ao_ccss
+        chown -R www-data:www-data /var/www/html/wp-content/uploads/ao_ccss
+        chmod -R 777 /var/www/html/wp-content/uploads/ao_ccss
+        
+        echo "Permisos uploads i ao_ccss configurats: 777"
     fi
 fi
 
