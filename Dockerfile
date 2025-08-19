@@ -44,8 +44,8 @@ echo "Configurant permisos dels volums persistents..."
 if [ -d "/var/www/html/wp-content/uploads" ]; then
     echo "Configurant permisos per uploads..."
     chown -R www-data:www-data /var/www/html/wp-content/uploads
-    chmod -R 775 /var/www/html/wp-content/uploads
-    echo "Permisos uploads configurats: 775"
+    chmod -R 777 /var/www/html/wp-content/uploads
+    echo "Permisos uploads configurats: 777"
 fi
 
 if [ -d "/var/www/html/wp-content/plugins" ]; then
