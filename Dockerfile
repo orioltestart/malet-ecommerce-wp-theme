@@ -59,6 +59,12 @@ if [ -d "/var/www/html/wp-content" ]; then
         chown -R www-data:www-data /var/www/html/wp-content/uploads/ao_ccss
         chmod -R 777 /var/www/html/wp-content/uploads/ao_ccss
         
+        # Desactivar temporalment Autoptimize eliminant el fitxer principal
+        if [ -f "/var/www/html/wp-content/plugins/autoptimize/autoptimize.php" ]; then
+            echo "Desactivant temporalment Autoptimize per problemes de permisos..."
+            mv /var/www/html/wp-content/plugins/autoptimize/autoptimize.php /var/www/html/wp-content/plugins/autoptimize/autoptimize.php.disabled
+        fi
+        
         echo "Permisos uploads i ao_ccss configurats: 777"
     fi
 fi
