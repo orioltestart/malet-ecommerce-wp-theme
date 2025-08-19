@@ -1,13 +1,70 @@
 #!/bin/bash
 set -euo pipefail
 
-# Configuració
-BACKUP_DIR="/backups"
+# ===== CONFIGURACIÓ I VARIABLES D'ENTORN =====
+
+# Verificar que existeix el fitxer .env
+if [ ! -f ".env" ]; then
+    echo "❌ Error: Fitxer .env no trobat!"
+    echo "Copia .env.example a .env i configura les variables"
+    exit 1
+fi
+
+# Carregar variables d'entorn
+source .env
+
+# Variables d'entorn necessàries (sense valors per defecte)
+BACKUP_DIR="${BACKUP_DIR}"
+RETENTION_DAYS="${BACKUP_RETENTION_DAYS}"
+WORDPRESS_ADMIN_EMAIL="${WORDPRESS_ADMIN_EMAIL}"
+
+# Variables de base de dades (sense valors per defecte)
+DB_HOST="${WORDPRESS_DB_HOST}"
+DB_NAME="${WORDPRESS_DB_NAME}"
+DB_USER="${WORDPRESS_DB_USER}"
+DB_PASSWORD="${WORDPRESS_DB_PASSWORD}"
+
+# Variables generades
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 DB_BACKUP_FILE="$BACKUP_DIR/db_backup_$TIMESTAMP.sql"
 UPLOADS_BACKUP_FILE="$BACKUP_DIR/uploads_backup_$TIMESTAMP.tar.gz"
 FULL_BACKUP_FILE="$BACKUP_DIR/full_backup_$TIMESTAMP.tar.gz"
-RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+
+# ===== COMPROVACIONS DE VARIABLES OBLIGATÒRIES =====
+echo "🔍 Verificant configuració..."
+
+REQUIRED_VARS=(
+    "BACKUP_DIR"
+    "BACKUP_RETENTION_DAYS"
+    "WORDPRESS_ADMIN_EMAIL"
+    "WORDPRESS_DB_HOST"
+    "WORDPRESS_DB_NAME"
+    "WORDPRESS_DB_USER"
+    "WORDPRESS_DB_PASSWORD"
+)
+
+missing_vars=()
+for var in "${REQUIRED_VARS[@]}"; do
+    var_value="${!var:-}"
+    if [ -z "$var_value" ]; then
+        missing_vars+=("$var")
+    fi
+done
+
+if [ ${#missing_vars[@]} -gt 0 ]; then
+    echo "❌ Error: Variables obligatòries no definides al fitxer .env:"
+    for var in "${missing_vars[@]}"; do
+        echo "   - $var"
+    done
+    echo ""
+    echo "💡 Assegura't que el fitxer .env conté totes les variables necessàries"
+    exit 1
+fi
+
+echo "✅ Configuració verificada"
+echo "   - Base de dades: $DB_NAME"
+echo "   - Directori backup: $BACKUP_DIR"
+echo "   - Retenció: $RETENTION_DAYS dies"
 
 echo "🗄️ Iniciant backup del lloc web..."
 
@@ -53,5 +110,10 @@ echo "  - Backup complet: $(du -h "$FULL_BACKUP_FILE" | cut -f1)"
 
 echo "✅ Backup completat amb èxit!"
 
-# Opcional: enviar notificació (descomenta si tens configuració SMTP)
-# wp eval "wp_mail('admin@your-domain.com', 'Backup completat', 'El backup del $TIMESTAMP s\'ha completat correctament.');" --allow-root
+# Opcional: enviar notificació per email
+if command -v wp >/dev/null 2>&1; then
+    echo "📧 Enviant notificació per email a $WORDPRESS_ADMIN_EMAIL..."
+    wp eval "wp_mail('$WORDPRESS_ADMIN_EMAIL', 'Backup completat - Malet Torrent', 'El backup del $TIMESTAMP s\'ha completat correctament.\n\nFitxers generats:\n- Base de dades: $DB_BACKUP_FILE\n- Uploads: $UPLOADS_BACKUP_FILE\n- Backup complet: $FULL_BACKUP_FILE');" --allow-root --path=/var/www/html 2>/dev/null || echo "⚠️ No s'ha pogut enviar l'email de notificació"
+else
+    echo "⚠️ WP-CLI no disponible, saltant notificació per email"
+fi

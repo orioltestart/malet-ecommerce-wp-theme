@@ -66,20 +66,66 @@ Volums configurats al Dockerfile:
 - **Password**: MaletSecurePass2024!
 
 ### Variables d'Entorn
+
+#### 🗄️ Variables de Base de Dades (OBLIGATÒRIES)
 ```bash
 WORDPRESS_DB_HOST=malet-wp-db-vmvyjp:3306
 WORDPRESS_DB_NAME=malet_torrent
 WORDPRESS_DB_USER=malet_user
 WORDPRESS_DB_PASSWORD=MaletSecurePass2024!
-
-# Security Keys (auto-generades)
-WORDPRESS_AUTH_KEY=5c2d9ef4a7b1e8f3c6d0e9f2a5b8c1d4e7f0a3b6c9d2e5f8
-WORDPRESS_SECURE_AUTH_KEY=1a4d7f0c3e6b9d2f5a8c1e4b7f0c3e6b9d2f5a8c1e4b7f0c
-# ... (altres claus de seguretat)
-
 WORDPRESS_TABLE_PREFIX=wp_
 WORDPRESS_DEBUG=false
 ```
+
+#### 🔑 Claus de Seguretat WordPress (auto-generades)
+```bash
+WORDPRESS_AUTH_KEY=5c2d9ef4a7b1e8f3c6d0e9f2a5b8c1d4e7f0a3b6c9d2e5f8
+WORDPRESS_SECURE_AUTH_KEY=1a4d7f0c3e6b9d2f5a8c1e4b7f0c3e6b9d2f5a8c1e4b7f0c
+# ... (altres claus de seguretat)
+```
+
+#### 🚀 Variables d'Instalació WordPress (OPCIONALS - Definides al Dockerfile)
+```bash
+# Si vols sobreescriure els valors per defecte, afegeix aquestes variables a Dokploy:
+WORDPRESS_URL=https://wp2.malet.testart.cat
+WORDPRESS_TITLE="Malet Torrent - Pastisseria Artesana"
+WORDPRESS_ADMIN_USER=admin
+WORDPRESS_ADMIN_PASSWORD="WZd6&F#@d$oAqSW!A)"
+WORDPRESS_ADMIN_EMAIL=admin@malet.testart.cat
+```
+
+#### 🔗 Variables GitHub per Actualitzacions (OPCIONALS - Definides al Dockerfile)
+```bash
+# Si vols sobreescriure els valors per defecte, afegeix aquestes variables a Dokploy:
+MALET_TORRENT_GITHUB_USER=orioltestart
+MALET_TORRENT_GITHUB_REPO=malet-ecommerce-wp-theme
+MALET_TORRENT_UPDATE_CHECK_INTERVAL=21600
+MALET_TORRENT_ALLOW_PRERELEASES=false
+```
+
+#### 🎨 Variables del Tema (OPCIONALS - Definides al Dockerfile)
+```bash
+# Si vols sobreescriure els valors per defecte, afegeix aquesta variable a Dokploy:
+WORDPRESS_THEME_NAME=malet-torrent
+```
+
+### 🔧 Configuració per Entorns
+
+#### **Docker Compose (Desenvolupament Local)**
+1. Copia `.env.example` a `.env`
+2. Modifica els valors segons necessitis
+3. Executa `docker-compose up -d`
+
+#### **Dokploy (Producció)**
+Les variables es defineixen al panell de Dokploy:
+1. Accedir a l'aplicació `malet-wp-theme-complete-9mr0ul`
+2. Anar a la secció **Environment Variables**
+3. Afegir només les variables que vols sobreescriure (les obligatòries són les de DB)
+
+#### **Jerarquia de Variables**
+1. **Dokploy Environment Variables** (prioritat alta)
+2. **Docker Compose .env** (prioritat mitjana)
+3. **Dockerfile ENV defaults** (prioritat baixa)
 
 ## 🔑 Credencials d'Accés
 
@@ -116,7 +162,24 @@ WORDPRESS_DEBUG=false
 
 ## 🚀 Procés de Desplegament
 
-### 1. Desenvolupament Local
+### 1. Desenvolupament Local amb Docker Compose
+```bash
+# Clonar el repositori
+git clone https://github.com/orioltestart/malet-ecommerce-wp-theme.git
+cd malet-ecommerce-wp-theme
+
+# Configurar variables d'entorn
+cp .env.example .env
+# Editar .env amb els teus valors
+
+# Executar amb Docker Compose
+docker-compose up -d
+
+# Accedir a WordPress
+# http://localhost:8080
+```
+
+### 2. Modificació i Push
 ```bash
 # Modificar fitxers del tema
 git add .
@@ -124,12 +187,12 @@ git commit -m "Descripció dels canvis"
 git push origin main
 ```
 
-### 2. Desplegament Automàtic
+### 3. Desplegament Automàtic (Dokploy)
 - El webhook de GitHub activa automàticament el desplegament a Dokploy
 - Docker construeix nova imatge amb els canvis
 - WordPress es reinicia amb la nova versió del tema
 
-### 3. Verificació
+### 4. Verificació
 - Comprovar https://wp2.malet.testart.cat/
 - Verificar que el tema s'ha actualitzat correctament
 - Revisar logs de desplegament a Dokploy si hi ha errors
