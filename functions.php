@@ -11,6 +11,21 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * Desactivar temporalment Autoptimize per evitar errors de permisos
+ * Es pot eliminar aquesta funció quan es resolguin els problemes de permisos
+ */
+add_action('plugins_loaded', function() {
+    if (is_plugin_active('autoptimize/autoptimize.php')) {
+        deactivate_plugins('autoptimize/autoptimize.php');
+        if (is_admin()) {
+            add_action('admin_notices', function() {
+                echo '<div class="notice notice-warning is-dismissible"><p><strong>Autoptimize desactivat temporalment</strong> per problemes de permisos. Configura correctament els directoris wp-content/uploads.</p></div>';
+            });
+        }
+    }
+}, 0);
+
 // Constants del tema
 define('MALETNEXT_VERSION', '1.0.0');
 define('MALETNEXT_THEME_DIR', get_template_directory());
