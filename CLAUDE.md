@@ -94,15 +94,6 @@ WORDPRESS_ADMIN_PASSWORD="WZd6&F#@d$oAqSW!A)"
 WORDPRESS_ADMIN_EMAIL=admin@malet.testart.cat
 ```
 
-#### 🔗 Variables GitHub per Actualitzacions (OPCIONALS - Definides al Dockerfile)
-```bash
-# Si vols sobreescriure els valors per defecte, afegeix aquestes variables a Dokploy:
-MALET_TORRENT_GITHUB_USER=orioltestart
-MALET_TORRENT_GITHUB_REPO=malet-ecommerce-wp-theme
-MALET_TORRENT_UPDATE_CHECK_INTERVAL=21600
-MALET_TORRENT_ALLOW_PRERELEASES=false
-```
-
 #### 🎨 Variables del Tema (OPCIONALS - Definides al Dockerfile)
 ```bash
 # Si vols sobreescriure els valors per defecte, afegeix aquesta variable a Dokploy:
@@ -154,11 +145,6 @@ Les variables es defineixen al panell de Dokploy:
 - `assets/` - CSS, JS, imatges i fonts
 - `inc/` - Funcionalitats modulars del tema
 - `updater/` - Sistema d'actualitzacions automàtiques via GitHub
-
-### Sistema d'Actualitzacions
-- `updater/class-theme-updater.php` - Classe principal per actualitzacions
-- Integració amb GitHub API per detectar noves versions
-- Actualitzacions automàtiques via WordPress admin
 
 ## 🚀 Procés de Desplegament
 
@@ -232,21 +218,6 @@ COPY *.php /var/www/html/wp-content/themes/malet-torrent/
 COPY style.css /var/www/html/wp-content/themes/malet-torrent/
 COPY assets/ /var/www/html/wp-content/themes/malet-torrent/assets/
 COPY inc/ /var/www/html/wp-content/themes/malet-torrent/inc/
-COPY updater/ /var/www/html/wp-content/themes/malet-torrent/updater/
-
-# Script opcional per configurar constants GitHub
-RUN cat > /usr/local/bin/setup-github-constants.sh << 'EOF'
-#!/bin/bash
-# Execució manual: docker exec -it container_name /usr/local/bin/setup-github-constants.sh
-if [ -f /var/www/html/wp-config.php ] && wp core is-installed --allow-root --path=/var/www/html 2>/dev/null; then
-    echo "Configurant constants GitHub..."
-    wp config set MALET_TORRENT_GITHUB_USER "orioltestart" --allow-root --path=/var/www/html
-    wp config set MALET_TORRENT_GITHUB_REPO "malet-ecommerce-wp-theme" --allow-root --path=/var/www/html
-    wp config set MALET_TORRENT_UPDATE_CHECK_INTERVAL 21600 --raw --allow-root --path=/var/www/html
-    wp config set MALET_TORRENT_ALLOW_PRERELEASES false --raw --allow-root --path=/var/www/html
-    echo "Constants GitHub configurades!"
-fi
-EOF
 
 # Permisos correctes
 RUN chown -R www-data:www-data /var/www/html
@@ -261,12 +232,6 @@ CMD ["apache2-foreground"]
 # Entrar al contenidor (Dokploy no dona accés SSH directe)
 # Cal usar el panell de Dokploy o configurar via wp-admin
 
-# Configurar constants GitHub manualment via WP-CLI
-wp config set MALET_TORRENT_GITHUB_USER "orioltestart" --allow-root --path=/var/www/html
-wp config set MALET_TORRENT_GITHUB_REPO "malet-ecommerce-wp-theme" --allow-root --path=/var/www/html
-wp config set MALET_TORRENT_UPDATE_CHECK_INTERVAL 21600 --raw --allow-root --path=/var/www/html
-wp config set MALET_TORRENT_ALLOW_PRERELEASES false --raw --allow-root --path=/var/www/html
-
 # Comandos WP-CLI útils
 wp theme list --allow-root --path=/var/www/html
 wp theme activate malet-torrent --allow-root --path=/var/www/html
@@ -276,14 +241,6 @@ wp core version --allow-root --path=/var/www/html
 ```
 
 ## 🔄 Sistema d'Actualitzacions Automàtiques
-
-### Constants GitHub (wp-config.php)
-```php
-define('MALET_TORRENT_GITHUB_USER', 'orioltestart');
-define('MALET_TORRENT_GITHUB_REPO', 'malet-ecommerce-wp-theme');
-define('MALET_TORRENT_UPDATE_CHECK_INTERVAL', 21600); // 6 hores
-define('MALET_TORRENT_ALLOW_PRERELEASES', false);
-```
 
 ### Funcionalitats
 - Comprovació automàtica d'actualitzacions cada 6 hores
@@ -395,15 +352,6 @@ docker exec -it malet-wp-theme-complete-9mr0ul /usr/local/bin/setup-github-const
 - [ ] Configurar constants GitHub per actualitzacions automàtiques
 - [ ] Verificar sistema d'actualitzacions del tema
 - [ ] Configurar backup automàtic de base de dades
-
-### Instruccions per Configurar Constants GitHub
-```bash
-# Via wp-admin → Tools → WP-CLI (si està disponible) o via accés al contenidor:
-wp config set MALET_TORRENT_GITHUB_USER "orioltestart" --allow-root --path=/var/www/html
-wp config set MALET_TORRENT_GITHUB_REPO "malet-ecommerce-wp-theme" --allow-root --path=/var/www/html
-wp config set MALET_TORRENT_UPDATE_CHECK_INTERVAL 21600 --raw --allow-root --path=/var/www/html
-wp config set MALET_TORRENT_ALLOW_PRERELEASES false --raw --allow-root --path=/var/www/html
-```
 
 ---
 

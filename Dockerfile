@@ -30,7 +30,6 @@ COPY *.php /var/www/html/wp-content/themes/malet-torrent/
 COPY style.css /var/www/html/wp-content/themes/malet-torrent/
 COPY assets/ /var/www/html/wp-content/themes/malet-torrent/assets/
 COPY inc/ /var/www/html/wp-content/themes/malet-torrent/inc/
-COPY updater/ /var/www/html/wp-content/themes/malet-torrent/updater/
 
 # Crear directori wp-content amb permisos correctes
 RUN mkdir -p /var/www/html/wp-content && \
@@ -81,10 +80,6 @@ ENV WORDPRESS_TITLE="${WORDPRESS_TITLE:-Malet Torrent - Pastisseria Artesana}"
 ENV WORDPRESS_ADMIN_USER="${WORDPRESS_ADMIN_USER:-admin}"
 ENV WORDPRESS_ADMIN_PASSWORD="${WORDPRESS_ADMIN_PASSWORD:-WZd6&F#@d\$oAqSW!A)}"
 ENV WORDPRESS_ADMIN_EMAIL="${WORDPRESS_ADMIN_EMAIL:-admin@malet.testart.cat}"
-ENV MALET_TORRENT_GITHUB_USER="${MALET_TORRENT_GITHUB_USER:-orioltestart}"
-ENV MALET_TORRENT_GITHUB_REPO="${MALET_TORRENT_GITHUB_REPO:-malet-ecommerce-wp-theme}"
-ENV MALET_TORRENT_UPDATE_CHECK_INTERVAL="${MALET_TORRENT_UPDATE_CHECK_INTERVAL:-21600}"
-ENV MALET_TORRENT_ALLOW_PRERELEASES="${MALET_TORRENT_ALLOW_PRERELEASES:-false}"
 ENV WORDPRESS_THEME_NAME="${WORDPRESS_THEME_NAME:-malet-torrent}"
 
 # Definir volum persistent per tot wp-content
@@ -150,13 +145,11 @@ else
     echo "✓ WordPress ya está instalado, saltando instalación..."
 fi
 
-# Configurar constants GitHub
-echo "🔧 Configurando constantes GitHub..."
-wp config set MALET_TORRENT_GITHUB_USER "${MALET_TORRENT_GITHUB_USER}" --allow-root --path=/var/www/html
-wp config set MALET_TORRENT_GITHUB_REPO "${MALET_TORRENT_GITHUB_REPO}" --allow-root --path=/var/www/html  
-wp config set MALET_TORRENT_UPDATE_CHECK_INTERVAL "${MALET_TORRENT_UPDATE_CHECK_INTERVAL}" --raw --allow-root --path=/var/www/html
-wp config set MALET_TORRENT_ALLOW_PRERELEASES "${MALET_TORRENT_ALLOW_PRERELEASES}" --raw --allow-root --path=/var/www/html
-echo "✅ Constantes GitHub configuradas!"
+# Configurar URLs i SSL per desenvolupament
+echo "🔧 Configurant URLs WordPress per HTTP..."
+wp config set WP_HOME "${WP_HOME:-${WORDPRESS_URL}}" --allow-root --path=/var/www/html
+wp config set WP_SITEURL "${WP_SITEURL:-${WORDPRESS_URL}}" --allow-root --path=/var/www/html
+wp config set FORCE_SSL_ADMIN false --raw --allow-root --path=/var/www/html
 
 # Configurar Redis per al plugin Redis Object Cache
 echo "🔧 Configurando Redis para Object Cache..."

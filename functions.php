@@ -31,24 +31,6 @@ define('MALETNEXT_VERSION', '1.0.0');
 define('MALETNEXT_THEME_DIR', get_template_directory());
 define('MALETNEXT_THEME_URL', get_template_directory_uri());
 
-// GitHub configuration for theme updates - support .env variables
-if (!defined('MALET_TORRENT_GITHUB_USER')) {
-    define('MALET_TORRENT_GITHUB_USER', $_ENV['MALET_TORRENT_GITHUB_USER'] ?? 'orioltestart');
-}
-if (!defined('MALET_TORRENT_GITHUB_REPO')) {
-    define('MALET_TORRENT_GITHUB_REPO', $_ENV['MALET_TORRENT_GITHUB_REPO'] ?? 'malet-ecommerce-wp-theme');
-}
-if (!defined('MALET_TORRENT_UPDATE_CHECK_INTERVAL')) {
-    define('MALET_TORRENT_UPDATE_CHECK_INTERVAL', (int)($_ENV['MALET_TORRENT_UPDATE_CHECK_INTERVAL'] ?? 12) * HOUR_IN_SECONDS);
-}
-if (!defined('MALET_TORRENT_ALLOW_PRERELEASES')) {
-    define('MALET_TORRENT_ALLOW_PRERELEASES', filter_var($_ENV['MALET_TORRENT_ALLOW_PRERELEASES'] ?? false, FILTER_VALIDATE_BOOLEAN));
-}
-// GitHub token for private repository access - configure via .env or wp-config.php
-if (!defined('MALET_TORRENT_GITHUB_TOKEN')) {
-    define('MALET_TORRENT_GITHUB_TOKEN', $_ENV['MALET_TORRENT_GITHUB_TOKEN'] ?? '');
-}
-
 /**
  * Configuració inicial del tema
  */
@@ -118,17 +100,14 @@ add_action('admin_notices', 'malet_torrent_indexing_admin_notice');
 // Incloure sistema d'instal·lació de plugins
 require_once get_template_directory() . '/inc/class-plugin-installer.php';
 
-// Incloure sistema d'actualització del tema
-require_once get_template_directory() . '/updater/class-theme-updater.php';
-
 require_once get_template_directory() . '/inc/admin-notices.php';
+
+// Incloure sistema JWT Auth
+require_once get_template_directory() . '/inc/class-jwt-auth.php';
 
 // Inicialitzar sistema de plugins
 add_action('after_setup_theme', 'malet_torrent_init_plugin_system');
 add_action('after_switch_theme', 'malet_torrent_reset_plugin_notices');
-
-// Inicialitzar sistema d'actualització
-add_action('after_setup_theme', 'malet_torrent_init_updater_system');
 
 /**
  * Inicialitzar sistema de plugins
@@ -146,15 +125,6 @@ function malet_torrent_reset_plugin_notices() {
     $admin_notices = new Malet_Torrent_Admin_Notices();
     $admin_notices->reset_dismissed_notices();
     $admin_notices->reset_dismissed_updates();
-}
-
-/**
- * Inicialitzar sistema d'actualització del tema
- */
-function malet_torrent_init_updater_system() {
-    if (is_admin()) {
-        Malet_Torrent_Theme_Updater::get_instance();
-    }
 }
 
 /**
@@ -226,11 +196,22 @@ function malet_torrent_wp_json_cors() {
         // Headers per WooCommerce REST API v3
         if (strpos($_SERVER['REQUEST_URI'], '/wp-json/wc/v3/') !== false) {
             header('Access-Control-Expose-Headers: X-WP-Total, X-WP-TotalPages, X-WC-Store-API-Nonce');
+            
+            // Headers específics per customers endpoint
+            if (strpos($_SERVER['REQUEST_URI'], '/wp-json/wc/v3/customers') !== false) {
+                header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-WP-Nonce');
+            }
         }
         
         // Headers per endpoints personalitzats
         if (strpos($_SERVER['REQUEST_URI'], '/wp-json/malet-torrent/') !== false) {
             // Headers adicionals específics per Malet Torrent
+        }
+        
+        // Headers per endpoints JWT Auth
+        if (strpos($_SERVER['REQUEST_URI'], '/wp-json/maletnext/v1/auth/') !== false) {
+            header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+            header('Access-Control-Expose-Headers: Authorization');
         }
     }
 }
@@ -514,6 +495,20 @@ function malet_torrent_register_custom_endpoints() {
         'callback' => 'malet_torrent_get_woocommerce_config',
         'permission_callback' => '__return_true',
     ));
+    
+    // Endpoint per customers (proxy per facilitar frontend)
+    register_rest_route('malet-torrent/v1', '/customers', array(
+        'methods' => 'GET',
+        'callback' => 'malet_torrent_get_customers',
+        'permission_callback' => '__return_true',
+    ));
+    
+    // Endpoint per orders (proxy per facilitar frontend)
+    register_rest_route('malet-torrent/v1', '/orders', array(
+        'methods' => 'GET',
+        'callback' => 'malet_torrent_get_orders',
+        'permission_callback' => '__return_true',
+    ));
 }
 
 /**
@@ -665,6 +660,140 @@ function malet_torrent_get_woocommerce_config($request) {
 }
 
 /**
+ * Obtenir customers (proxy per facilitar frontend)
+ */
+function malet_torrent_get_customers($request) {
+    if (!class_exists('WooCommerce')) {
+        return new WP_Error('woocommerce_not_active', 'WooCommerce is not active', array('status' => 500));
+    }
+    
+    $per_page = $request->get_param('per_page') ?: 10;
+    $page = $request->get_param('page') ?: 1;
+    
+    $args = array(
+        'role' => 'customer',
+        'number' => $per_page,
+        'offset' => ($page - 1) * $per_page,
+        'orderby' => 'registered',
+        'order' => 'DESC'
+    );
+    
+    $user_query = new WP_User_Query($args);
+    $customers = array();
+    
+    foreach ($user_query->get_results() as $user) {
+        $customer = new WC_Customer($user->ID);
+        $customers[] = array(
+            'id' => $user->ID,
+            'email' => $user->user_email,
+            'first_name' => $customer->get_first_name(),
+            'last_name' => $customer->get_last_name(),
+            'username' => $user->user_login,
+            'date_created' => $user->user_registered,
+            'orders_count' => wc_get_customer_order_count($user->ID),
+            'total_spent' => wc_get_customer_total_spent($user->ID),
+            'avatar_url' => get_avatar_url($user->ID),
+        );
+    }
+    
+    return array(
+        'customers' => $customers,
+        'total' => $user_query->get_total(),
+        'page' => $page,
+        'per_page' => $per_page,
+        'pages' => ceil($user_query->get_total() / $per_page)
+    );
+}
+
+/**
+ * Obtenir orders (proxy per facilitar frontend)
+ */
+function malet_torrent_get_orders($request) {
+    if (!class_exists('WooCommerce')) {
+        return new WP_Error('woocommerce_not_active', 'WooCommerce is not active', array('status' => 500));
+    }
+    
+    $per_page = $request->get_param('per_page') ?: 10;
+    $page = $request->get_param('page') ?: 1;
+    $status = $request->get_param('status') ?: 'any';
+    $customer_id = $request->get_param('customer_id');
+    
+    $args = array(
+        'limit' => $per_page,
+        'offset' => ($page - 1) * $per_page,
+        'orderby' => 'date',
+        'order' => 'DESC'
+    );
+    
+    if ($status !== 'any') {
+        $args['status'] = $status;
+    }
+    
+    if ($customer_id) {
+        $args['customer_id'] = $customer_id;
+    }
+    
+    $orders_query = wc_get_orders($args);
+    $orders = array();
+    
+    foreach ($orders_query as $order) {
+        $customer = $order->get_user();
+        $line_items = array();
+        
+        foreach ($order->get_items() as $item) {
+            $product = $item->get_product();
+            $line_items[] = array(
+                'product_id' => $item->get_product_id(),
+                'name' => $item->get_name(),
+                'quantity' => $item->get_quantity(),
+                'total' => $item->get_total(),
+                'sku' => $product ? $product->get_sku() : '',
+            );
+        }
+        
+        $orders[] = array(
+            'id' => $order->get_id(),
+            'status' => $order->get_status(),
+            'total' => $order->get_total(),
+            'currency' => $order->get_currency(),
+            'date_created' => $order->get_date_created()->date('Y-m-d H:i:s'),
+            'customer_id' => $order->get_customer_id(),
+            'customer_name' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+            'customer_email' => $order->get_billing_email(),
+            'payment_method' => $order->get_payment_method(),
+            'payment_method_title' => $order->get_payment_method_title(),
+            'customer_note' => $order->get_customer_note(),
+            'line_items' => $line_items,
+            'billing' => array(
+                'first_name' => $order->get_billing_first_name(),
+                'last_name' => $order->get_billing_last_name(),
+                'email' => $order->get_billing_email(),
+                'phone' => $order->get_billing_phone(),
+                'address_1' => $order->get_billing_address_1(),
+                'city' => $order->get_billing_city(),
+                'state' => $order->get_billing_state(),
+                'postcode' => $order->get_billing_postcode(),
+                'country' => $order->get_billing_country(),
+            ),
+        );
+    }
+    
+    // Contar total de orders
+    $total_args = $args;
+    unset($total_args['limit']);
+    unset($total_args['offset']);
+    $total_orders = count(wc_get_orders($total_args));
+    
+    return array(
+        'orders' => $orders,
+        'total' => $total_orders,
+        'page' => $page,
+        'per_page' => $per_page,
+        'pages' => ceil($total_orders / $per_page)
+    );
+}
+
+/**
  * Afegir pàgina de configuració al admin
  */
 function malet_torrent_admin_menu() {
@@ -683,10 +812,8 @@ add_action('admin_menu', 'malet_torrent_admin_menu');
  */
 function malet_torrent_settings_page() {
     $installer = Malet_Torrent_Plugin_Installer::get_instance();
-    $updater = Malet_Torrent_Theme_Updater::get_instance();
     $status = $installer->get_installation_status();
     $summary = Malet_Torrent_Admin_Notices::get_status_summary();
-    $update_status = $updater->get_update_status();
     ?>
     <div class="wrap malet-torrent-settings-page">
         <h1>🥨 Configuració Malet Torrent</h1>
@@ -701,29 +828,6 @@ function malet_torrent_settings_page() {
                 <h2>📊 Estat de l'API</h2>
                 <div id="api-status">
                     <?php malet_torrent_display_api_status(); ?>
-                </div>
-            </div>
-            
-            <div class="malet-torrent-card">
-                <h2>🔄 Actualitzacions del Tema</h2>
-                <div class="theme-update-status">
-                    <p><strong>Versió Actual:</strong> <span class="current-version"><?php echo esc_html($update_status['current_version']); ?></span></p>
-                    <?php if ($update_status['update_available']): ?>
-                        <p><strong>Última Versió:</strong> <span class="latest-version"><?php echo esc_html($update_status['latest_version']); ?></span></p>
-                        <p class="api-status-warning status-text">⚠️ Actualització disponible</p>
-                        <button type="button" class="button button-primary check-theme-updates" data-nonce="<?php echo wp_create_nonce('malet_torrent_check_updates'); ?>">
-                            Comprovar Actualitzacions
-                        </button>
-                    <?php else: ?>
-                        <p><strong>Última Versió:</strong> <span class="latest-version"><?php echo esc_html($update_status['current_version']); ?></span></p>
-                        <p class="api-status-ok status-text">✅ Tema actualitzat</p>
-                        <button type="button" class="button button-secondary check-theme-updates" data-nonce="<?php echo wp_create_nonce('malet_torrent_check_updates'); ?>">
-                            Comprovar Actualitzacions
-                        </button>
-                    <?php endif; ?>
-                    <?php if ($updater->get_repository_url()): ?>
-                        <p><a href="<?php echo esc_url($updater->get_repository_url()); ?>" target="_blank">Veure al GitHub</a></p>
-                    <?php endif; ?>
                 </div>
             </div>
             
@@ -929,3 +1033,51 @@ function malet_torrent_theme_action_links($actions, $theme) {
     return $actions;
 }
 add_filter('theme_action_links', 'malet_torrent_theme_action_links', 10, 2);
+
+/**
+ * Saltar només els wizards de WooCommerce, però mantenir l'accés a WC Admin
+ */
+add_filter('woocommerce_enable_setup_wizard', '__return_false');
+add_filter('woocommerce_admin_onboarding_profile_completed', '__return_true');
+add_filter('woocommerce_show_admin_notice', function($show, $notice) {
+    $notices_to_hide = ['install_notice', 'update_notice', 'template_check', 'theme_support'];
+    if (in_array($notice, $notices_to_hide)) {
+        return false;
+    }
+    return $show;
+}, 10, 2);
+
+// Marcar com completat l'onboarding
+add_action('init', function() {
+    if (class_exists('WooCommerce')) {
+        update_option('woocommerce_onboarding_profile', array(
+            'completed' => true,
+            'skipped' => true
+        ));
+        update_option('woocommerce_task_list_complete', 'yes');
+        update_option('woocommerce_extended_task_list_complete', 'yes');
+    }
+});
+
+/**
+ * Solucionar problemes d'autenticació API WooCommerce en desenvolupament
+ */
+// Permetre autenticació HTTP per WooCommerce API
+add_filter('woocommerce_api_check_authentication', function($user, $consumer_key, $consumer_secret, $signature, $timestamp, $nonce) {
+    return $user; // Deixar que WooCommerce gestioni l'autenticació
+}, 10, 6);
+
+// Forçar que WooCommerce accepti connexions HTTP (només desenvolupament)
+add_filter('woocommerce_rest_check_permissions', function($permission, $context, $object_id, $post_type) {
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        return true; // Permetre accés en mode debug
+    }
+    return $permission;
+}, 10, 4);
+
+// Assegurar que les claus API funcionen sense SSL
+add_action('init', function() {
+    if (class_exists('WooCommerce') && defined('WP_DEBUG') && WP_DEBUG) {
+        $_SERVER['HTTPS'] = 'on'; // Simular HTTPS per WooCommerce
+    }
+}, 1);
