@@ -514,6 +514,32 @@ function malet_torrent_register_custom_endpoints() {
         'callback' => 'malet_torrent_get_woocommerce_config',
         'permission_callback' => '__return_true',
     ));
+    
+    // Endpoint per categories de productes WooCommerce
+    register_rest_route('malet-torrent/v1', '/products/categories', array(
+        'methods' => 'GET',
+        'callback' => 'malet_torrent_get_product_categories',
+        'permission_callback' => '__return_true',
+        'args' => array(
+            'hide_empty' => array(
+                'description' => 'Ocultar categories sense productes',
+                'type' => 'boolean',
+                'default' => false,
+            ),
+            'orderby' => array(
+                'description' => 'Ordenar per: name, slug, count, term_id',
+                'type' => 'string',
+                'default' => 'name',
+                'enum' => array('name', 'slug', 'count', 'term_id'),
+            ),
+            'order' => array(
+                'description' => 'Ordre: asc o desc',
+                'type' => 'string',
+                'default' => 'asc',
+                'enum' => array('asc', 'desc'),
+            ),
+        ),
+    ));
 }
 
 /**
@@ -662,6 +688,96 @@ function malet_torrent_get_woocommerce_config($request) {
         'guest_checkout' => get_option('woocommerce_enable_guest_checkout') === 'yes',
         'reviews_enabled' => get_option('woocommerce_enable_reviews') === 'yes',
     );
+}
+
+/**
+ * Obtenir categories de productes WooCommerce
+ */
+function malet_torrent_get_product_categories($request) {
+    if (!class_exists('WooCommerce')) {
+        return new WP_Error('woocommerce_not_active', 'WooCommerce is not active', array('status' => 500));
+    }
+    
+    // Obtenir paràmetres de la request
+    $hide_empty = $request->get_param('hide_empty');
+    $orderby = $request->get_param('orderby');
+    $order = $request->get_param('order');
+    
+    // Arguments per obtenir les categories
+    $args = array(
+        'taxonomy' => 'product_cat',
+        'orderby' => $orderby,
+        'order' => $order,
+        'hide_empty' => $hide_empty,
+    );
+    
+    // Obtenir totes les categories
+    $categories = get_terms($args);
+    
+    if (is_wp_error($categories)) {
+        return new WP_Error('categories_error', 'Error retrieving categories: ' . $categories->get_error_message(), array('status' => 500));
+    }
+    
+    $formatted_categories = array();
+    
+    foreach ($categories as $category) {
+        // Obtenir informació detallada de la categoria
+        $image_id = get_term_meta($category->term_id, 'thumbnail_id', true);
+        $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'full') : null;
+        
+        // Obtenir categories fills
+        $children = get_term_children($category->term_id, 'product_cat');
+        $children_formatted = array();
+        
+        if (!is_wp_error($children) && !empty($children)) {
+            foreach ($children as $child_id) {
+                $child_term = get_term($child_id, 'product_cat');
+                if (!is_wp_error($child_term)) {
+                    $child_image_id = get_term_meta($child_term->term_id, 'thumbnail_id', true);
+                    $children_formatted[] = array(
+                        'id' => $child_term->term_id,
+                        'name' => $child_term->name,
+                        'slug' => $child_term->slug,
+                        'description' => $child_term->description,
+                        'count' => (int) $child_term->count,
+                        'parent' => $child_term->parent,
+                        'image' => $child_image_id ? wp_get_attachment_image_url($child_image_id, 'full') : null,
+                        'link' => get_term_link($child_term->term_id, 'product_cat'),
+                    );
+                }
+            }
+        }
+        
+        $formatted_categories[] = array(
+            'id' => $category->term_id,
+            'name' => $category->name,
+            'slug' => $category->slug,
+            'description' => $category->description,
+            'count' => (int) $category->count,
+            'parent' => $category->parent,
+            'image' => $image_url,
+            'link' => get_term_link($category->term_id, 'product_cat'),
+            'children' => $children_formatted,
+            'meta' => array(
+                'display_type' => get_term_meta($category->term_id, 'display_type', true),
+                'order' => get_term_meta($category->term_id, 'order', true),
+            ),
+        );
+    }
+    
+    // Estadístiques adicionals
+    $response = array(
+        'categories' => $formatted_categories,
+        'total' => count($formatted_categories),
+        'parameters' => array(
+            'hide_empty' => $hide_empty,
+            'orderby' => $orderby,
+            'order' => $order,
+        ),
+        'generated_at' => current_time('mysql'),
+    );
+    
+    return rest_ensure_response($response);
 }
 
 /**
@@ -838,6 +954,7 @@ function malet_torrent_display_api_status() {
     echo '<li><code>/wp-json/wc/v3/</code> - WooCommerce API</li>';
     echo '<li><code>/wp-json/wc/store/v1/</code> - Store API</li>';
     echo '<li><code>/wp-json/malet-torrent/v1/</code> - API Personalitzada</li>';
+    echo '<li><code>/wp-json/malet-torrent/v1/products/categories</code> - Categories WooCommerce</li>';
     echo '</ul>';
 }
 
