@@ -87,6 +87,7 @@ function malet_torrent_headless_setup() {
     
     // Afegir endpoints personalitzats
     add_action('rest_api_init', 'malet_torrent_register_custom_endpoints');
+    error_log('MALET DEBUG: Hook rest_api_init registrat');
 }
 add_action('init', 'malet_torrent_headless_setup');
 
@@ -468,6 +469,8 @@ function malet_torrent_get_category_image($term_id) {
  * Registrar endpoints personalitzats de la API
  */
 function malet_torrent_register_custom_endpoints() {
+    // Log per debug - temporary
+    error_log('MALET DEBUG: Registrant endpoints personalitzats');
     // Endpoint per obtenir configuració del lloc
     register_rest_route('malet-torrent/v1', '/config', array(
         'methods' => 'GET',
