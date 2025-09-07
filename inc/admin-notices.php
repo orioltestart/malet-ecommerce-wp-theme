@@ -20,16 +20,10 @@ class Malet_Torrent_Admin_Notices {
     private $installer;
     
     /**
-     * Theme updater instance
-     */
-    private $updater;
-    
-    /**
      * Constructor
      */
     public function __construct() {
         $this->installer = Malet_Torrent_Plugin_Installer::get_instance();
-        $this->updater = Malet_Torrent_Theme_Updater::get_instance();
         $this->init_hooks();
     }
     
@@ -40,7 +34,6 @@ class Malet_Torrent_Admin_Notices {
         add_action('admin_notices', [$this, 'display_plugin_notices']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
         add_action('wp_ajax_malet_torrent_dismiss_notice', [$this, 'ajax_dismiss_notice']);
-        add_action('wp_ajax_malet_torrent_dismiss_update_notice', [$this, 'ajax_dismiss_update_notice']);
     }
     
     /**
@@ -111,9 +104,6 @@ class Malet_Torrent_Admin_Notices {
      * Display plugin installation notices
      */
     public function display_plugin_notices() {
-        // Display update notice first (always check this)
-        $this->display_update_notice();
-        
         // Check if user can install plugins
         if (!current_user_can('install_plugins')) {
             return;
@@ -400,199 +390,6 @@ class Malet_Torrent_Admin_Notices {
      */
     public function reset_dismissed_updates() {
         delete_option('malet_torrent_dismissed_updates');
-    }
-    
-    /**
-     * Display theme update notice
-     */
-    public function display_update_notice() {
-        // Check if user can update themes
-        if (!current_user_can('update_themes')) {
-            return;
-        }
-        
-        // Only show on same screens where assets are loaded
-        $current_screen = get_current_screen();
-        if (!$current_screen || !in_array($current_screen->id, [
-            'dashboard', 
-            'themes', 
-            'plugins', 
-            'appearance_page_malet-torrent-settings'
-        ])) {
-            return;
-        }
-        
-        // Get update status first to check version-specific dismissal
-        $update_status = $this->updater->get_update_status();
-        
-        // Check if this specific version update is dismissed
-        if ($update_status['latest_version'] && $this->is_update_version_dismissed($update_status['latest_version'])) {
-            return;
-        }
-        
-        // Check if GitHub is configured (avoid placeholder values)
-        $github_user = defined('MALET_TORRENT_GITHUB_USER') ? MALET_TORRENT_GITHUB_USER : '';
-        $github_repo = defined('MALET_TORRENT_GITHUB_REPO') ? MALET_TORRENT_GITHUB_REPO : '';
-        
-        if (!$github_user || !$github_repo || 
-            $github_user === 'your-github-username' || 
-            $github_repo === 'malet-torrent-theme') {
-            ?>
-            <div class="notice notice-info malet-torrent-update-notice" data-priority="update">
-                <div class="malet-torrent-notice-header">
-                    <h3>
-                        <span class="dashicons dashicons-admin-settings"></span>
-                        <?php _e('Configuració d\'Actualitzacions - Malet Torrent', 'malet-torrent'); ?>
-                    </h3>
-                    <button type="button" class="notice-dismiss malet-torrent-dismiss" data-priority="update">
-                        <span class="screen-reader-text"><?php _e('Descartar aquest avís', 'malet-torrent'); ?></span>
-                    </button>
-                </div>
-                <div class="malet-torrent-notice-content">
-                    <p><?php _e('Per habilitar les actualitzacions automàtiques del tema, configureu les constants de GitHub al wp-config.php:', 'malet-torrent'); ?></p>
-                    <!-- TODO: Phase 2 - Add GUI for configuration management -->
-                    <pre>define('MALET_TORRENT_GITHUB_USER', 'your-github-username');
-define('MALET_TORRENT_GITHUB_REPO', 'malet-torrent-theme');</pre>
-                </div>
-            </div>
-            <?php
-            return;
-        }
-        
-        // Check for successful update
-        if (get_transient('malet_torrent_update_success')) {
-            delete_transient('malet_torrent_update_success');
-            ?>
-            <div class="notice notice-success is-dismissible malet-torrent-update-notice">
-                <p><strong><?php _e('Tema Malet Torrent actualitzat correctament!', 'malet-torrent'); ?></strong></p>
-            </div>
-            <?php
-            return;
-        }
-        
-        // Check for GitHub API errors and display them
-        $api_error = get_transient('malet_torrent_update_last_error');
-        if ($api_error) {
-            delete_transient('malet_torrent_update_last_error');
-            ?>
-            <div class="notice notice-warning malet-torrent-update-notice" data-priority="update">
-                <div class="malet-torrent-notice-header">
-                    <h3>
-                        <span class="dashicons dashicons-warning"></span>
-                        <?php _e('Error d\'Actualització - Malet Torrent', 'malet-torrent'); ?>
-                    </h3>
-                    <button type="button" class="notice-dismiss malet-torrent-dismiss" data-priority="update">
-                        <span class="screen-reader-text"><?php _e('Descartar aquest avís', 'malet-torrent'); ?></span>
-                    </button>
-                </div>
-                <div class="malet-torrent-notice-content">
-                    <div class="update-error">
-                        <span class="dashicons dashicons-warning"></span>
-                        <?php echo esc_html($api_error); ?>
-                    </div>
-                    <p><?php _e('Hi ha hagut un problema comprovant les actualitzacions. Torneu-ho a provar més tard.', 'malet-torrent'); ?></p>
-                </div>
-            </div>
-            <?php
-        }
-        
-        if (!$update_status['update_available']) {
-            return;
-        }
-        
-        ?>
-        <div class="notice notice-warning malet-torrent-update-notice" data-priority="update">
-            <div class="malet-torrent-notice-header">
-                <h3>
-                    <span class="dashicons dashicons-update"></span>
-                    <?php _e('Actualització Disponible - Malet Torrent', 'malet-torrent'); ?>
-                </h3>
-                <button type="button" class="notice-dismiss malet-torrent-dismiss" data-priority="update">
-                    <span class="screen-reader-text"><?php _e('Descartar aquest avís', 'malet-torrent'); ?></span>
-                </button>
-            </div>
-            
-            <div class="malet-torrent-notice-content">
-                <div class="update-version-info">
-                    <p>
-                        <strong><?php _e('Nova versió disponible:', 'malet-torrent'); ?></strong>
-                        v<?php echo esc_html($update_status['current_version']); ?> → v<?php echo esc_html($update_status['latest_version']); ?>
-                    </p>
-                </div>
-                
-                <?php if (!empty($update_status['changelog'])): ?>
-                <div class="update-changelog">
-                    <h4><?php _e('Novetats en aquesta versió:', 'malet-torrent'); ?></h4>
-                    <div class="changelog-content">
-                        <?php echo wp_kses_post($update_status['changelog']); ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-                
-                <div class="backup-reminder">
-                    <p class="api-status-warning">
-                        <span class="dashicons dashicons-backup"></span>
-                        <strong><?php _e('Important:', 'malet-torrent'); ?></strong>
-                        <?php _e('Es recomana fer una còpia de seguretat abans d\'actualitzar el tema.', 'malet-torrent'); ?>
-                    </p>
-                </div>
-                
-                <div class="malet-torrent-update-actions">
-                    <?php if (!empty($update_status['download_url'])): ?>
-                        <button type="button" class="button button-primary button-large install-theme-update" 
-                                data-nonce="<?php echo wp_create_nonce('malet_torrent_install_update'); ?>">
-                            <span class="dashicons dashicons-download"></span>
-                            <?php _e('Actualitzar Tema', 'malet-torrent'); ?>
-                        </button>
-                    <?php else: ?>
-                        <div class="update-error">
-                            <span class="dashicons dashicons-warning"></span>
-                            <?php _e('Aquesta versió no té un fitxer ZIP compatible disponible per a la instal·lació automàtica.', 'malet-torrent'); ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <button type="button" class="button button-secondary check-theme-updates" 
-                            data-nonce="<?php echo wp_create_nonce('malet_torrent_check_updates'); ?>">
-                        <span class="dashicons dashicons-update"></span>
-                        <?php _e('Comprovar de Nou', 'malet-torrent'); ?>
-                    </button>
-                    
-                    <div class="update-progress" style="display: none;">
-                        <div class="progress-bar">
-                            <div class="progress-fill"></div>
-                        </div>
-                        <div class="progress-text">0%</div>
-                    </div>
-                </div>
-                
-                <?php if (!empty($update_status['published_at'])): ?>
-                <div class="update-meta">
-                    <p><small>
-                        <?php _e('Publicat:', 'malet-torrent'); ?> 
-                        <?php echo esc_html(date_i18n(get_option('date_format'), strtotime($update_status['published_at']))); ?>
-                    </small></p>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
-        <?php
-    }
-    
-    
-    /**
-     * AJAX handler for dismissing update notice
-     */
-    public function ajax_dismiss_update_notice() {
-        check_ajax_referer('malet_torrent_dismiss_update_notice', 'nonce');
-        
-        // Get current update status to find the latest version
-        $update_status = $this->updater->get_update_status();
-        
-        if ($update_status['latest_version']) {
-            $this->dismiss_update_version($update_status['latest_version']);
-        }
-        
-        wp_send_json_success();
     }
     
     /**
