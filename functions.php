@@ -69,6 +69,18 @@ function malet_torrent_setup() {
 add_action('after_setup_theme', 'malet_torrent_setup');
 
 /**
+ * Registrar endpoint simple per debug
+ */
+function malet_debug_endpoint() {
+    register_rest_route('malet-torrent/v1', '/debug', array(
+        'methods' => 'GET',
+        'callback' => function() { return array('debug' => 'working'); },
+        'permission_callback' => '__return_true',
+    ));
+}
+add_action('rest_api_init', 'malet_debug_endpoint');
+
+/**
  * Configuració específica per headless
  */
 function malet_torrent_headless_setup() {
