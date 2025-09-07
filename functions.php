@@ -496,6 +496,13 @@ function malet_torrent_register_custom_endpoints() {
         'permission_callback' => '__return_true',
     ));
     
+    // Endpoint de test simple
+    register_rest_route('malet-torrent/v1', '/test', array(
+        'methods' => 'GET',
+        'callback' => function() { return array('status' => 'working', 'time' => current_time('mysql')); },
+        'permission_callback' => '__return_true',
+    ));
+    
     // Endpoint per categories de productes WooCommerce
     register_rest_route('malet-torrent/v1', '/products/categories', array(
         'methods' => 'GET',
