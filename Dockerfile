@@ -48,24 +48,15 @@ if [ -d "/var/www/html/wp-content" ]; then
     chmod -R 775 /var/www/html/wp-content
     echo "Permisos wp-content configurats: 775"
     
-    # Permisos especials per uploads (777 per Autoptimize)
-    if [ -d "/var/www/html/wp-content/uploads" ]; then
-        echo "Configurant permisos especials per uploads..."
-        chmod -R 777 /var/www/html/wp-content/uploads
-        
-        # Crear directori específic per Autoptimize amb permisos correctes
-        mkdir -p /var/www/html/wp-content/uploads/ao_ccss
-        chown -R www-data:www-data /var/www/html/wp-content/uploads/ao_ccss
-        chmod -R 777 /var/www/html/wp-content/uploads/ao_ccss
-        
-        # Desactivar temporalment Autoptimize eliminant el fitxer principal
-        if [ -f "/var/www/html/wp-content/plugins/autoptimize/autoptimize.php" ]; then
-            echo "Desactivant temporalment Autoptimize per problemes de permisos..."
-            mv /var/www/html/wp-content/plugins/autoptimize/autoptimize.php /var/www/html/wp-content/plugins/autoptimize/autoptimize.php.disabled
-        fi
-        
-        echo "Permisos uploads i ao_ccss configurats: 777"
-    fi
+    # Crear i configurar directoris necessaris per WordPress
+    mkdir -p /var/www/html/wp-content/uploads
+    mkdir -p /var/www/html/wp-content/upgrade
+    
+    echo "Configurant permisos per uploads i upgrade..."
+    chmod -R 775 /var/www/html/wp-content/uploads
+    chmod -R 775 /var/www/html/wp-content/upgrade
+    
+    echo "Permisos uploads i upgrade configurats: 775"
 fi
 
 echo "Permisos configurats correctament"
@@ -145,11 +136,26 @@ else
     echo "✓ WordPress ya está instalado, saltando instalación..."
 fi
 
-# Configurar URLs i SSL per desenvolupament
-echo "🔧 Configurant URLs WordPress per HTTP..."
-wp config set WP_HOME "${WP_HOME:-${WORDPRESS_URL}}" --allow-root --path=/var/www/html
-wp config set WP_SITEURL "${WP_SITEURL:-${WORDPRESS_URL}}" --allow-root --path=/var/www/html
-wp config set FORCE_SSL_ADMIN false --raw --allow-root --path=/var/www/html
+# Detectar entorn i configurar URLs adequadament
+if [[ "${WP_HOME}" == *"localhost"* ]] || [[ "${WORDPRESS_URL}" == *"localhost"* ]] || [[ "${WORDPRESS_URL}" == *"http://"* ]]; then
+    echo "🔧 Entorn de desenvolupament detectat - Configurant HTTP..."
+    wp config set WP_HOME "${WP_HOME:-${WORDPRESS_URL}}" --allow-root --path=/var/www/html
+    wp config set WP_SITEURL "${WP_SITEURL:-${WORDPRESS_URL}}" --allow-root --path=/var/www/html
+    wp config set FORCE_SSL_ADMIN false --raw --allow-root --path=/var/www/html
+    
+    # Eliminar configuracions HTTPS si existeixen
+    wp config delete WP_SSLPROXY --allow-root --path=/var/www/html 2>/dev/null || true
+    echo "✅ WordPress configurat per HTTP (desenvolupament)"
+else
+    echo "🔧 Entorn de producció detectat - Configurant HTTPS amb proxy..."
+    wp config set WP_HOME "${WP_HOME:-${WORDPRESS_URL}}" --allow-root --path=/var/www/html
+    wp config set WP_SITEURL "${WP_SITEURL:-${WORDPRESS_URL}}" --allow-root --path=/var/www/html
+    
+    # Configurar SSL per proxy invers (Traefik/Dokploy)
+    wp config set FORCE_SSL_ADMIN true --raw --allow-root --path=/var/www/html
+    wp config set WP_SSLPROXY 1 --raw --allow-root --path=/var/www/html
+    echo "✅ WordPress configurat per HTTPS (producció)"
+fi
 
 # Configurar Redis per al plugin Redis Object Cache
 echo "🔧 Configurando Redis para Object Cache..."

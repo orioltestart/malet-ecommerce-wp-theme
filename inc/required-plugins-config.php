@@ -106,20 +106,7 @@ return [
         ]
     ],
     
-    'autoptimize' => [
-        'name' => 'Autoptimize',
-        'priority' => 'recommended',
-        'description' => 'Optimització de CSS, JavaScript i HTML per millorar la velocitat',
-        'source' => null, // WordPress.org
-        'auto_activate' => true,
-        'required_for' => 'Performance optimization',
-        'features' => [
-            'Minificació de CSS/JS',
-            'Combinació de fitxers',
-            'Optimització d\'imatges',
-            'Cache de navegador'
-        ]
-    ],
+    // 'autoptimize' eliminat - 7 setembre 2025
     
     'wp-super-cache' => [
         'name' => 'WP Super Cache',

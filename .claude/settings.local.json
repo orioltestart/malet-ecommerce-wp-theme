@@ -3,7 +3,10 @@
     "allow": [
       "Bash(docker-compose exec wordpress ls:*)",
       "Bash(docker-compose exec wordpress head:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(docker exec:*)",
+      "Bash(docker ps:*)",
+      "Read(//mnt/c/Users/OriolTestart/Projectes/**)"
     ],
     "deny": [],
     "ask": []

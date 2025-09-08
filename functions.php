@@ -11,20 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-/**
- * Desactivar temporalment Autoptimize per evitar errors de permisos
- * Es pot eliminar aquesta funció quan es resolguin els problemes de permisos
- */
-add_action('plugins_loaded', function() {
-    if (is_plugin_active('autoptimize/autoptimize.php')) {
-        deactivate_plugins('autoptimize/autoptimize.php');
-        if (is_admin()) {
-            add_action('admin_notices', function() {
-                echo '<div class="notice notice-warning is-dismissible"><p><strong>Autoptimize desactivat temporalment</strong> per problemes de permisos. Configura correctament els directoris wp-content/uploads.</p></div>';
-            });
-        }
-    }
-}, 0);
+// Codi de desactivació d'Autoptimize eliminat - 7 setembre 2025
 
 // Constants del tema
 define('MALETNEXT_VERSION', '1.0.0');
@@ -63,10 +50,22 @@ function malet_torrent_setup() {
         'script',
     ));
     
-    // Localització
-    load_theme_textdomain('malet-torrent', MALETNEXT_THEME_DIR . '/languages');
+    // Localització es carregarà més tard en el hook 'init'
 }
 add_action('after_setup_theme', 'malet_torrent_setup');
+
+/**
+ * Carregar traduccions del tema i assegurar WooCommerce
+ */
+function malet_torrent_load_textdomain() {
+    // Carregar traduccions del tema
+    load_theme_textdomain('malet-torrent', MALETNEXT_THEME_DIR . '/languages');
+    
+    // Forçar càrrega de traduccions WooCommerce si està actiu
+    if (class_exists('WooCommerce')) {
+        load_plugin_textdomain('woocommerce', false, dirname(plugin_basename(__FILE__)) . '/languages/');
+    }
+}
 
 /**
  * Registrar endpoint simple per debug
@@ -94,11 +93,14 @@ function malet_torrent_headless_setup() {
     // CORS per wp-json requests
     add_action('init', 'malet_torrent_wp_json_cors', 1);
     
-    // Millorar la API REST per WooCommerce
-    add_action('rest_api_init', 'malet_torrent_enhance_woocommerce_api');
+    // Carregar traduccions del tema (prioritat alta per evitar conflictes)
+    add_action('init', 'malet_torrent_load_textdomain', 5);
     
-    // Afegir endpoints personalitzats
-    add_action('rest_api_init', 'malet_torrent_register_custom_endpoints');
+    // Millorar la API REST per WooCommerce (després que WooCommerce carregui)
+    add_action('rest_api_init', 'malet_torrent_enhance_woocommerce_api', 20);
+    
+    // Afegir endpoints personalitzats (després que WooCommerce carregui)
+    add_action('rest_api_init', 'malet_torrent_register_custom_endpoints', 20);
     error_log('MALET DEBUG: Hook rest_api_init registrat');
 }
 add_action('init', 'malet_torrent_headless_setup');
@@ -573,7 +575,7 @@ function malet_torrent_get_site_config($request) {
         'date_format' => get_option('date_format'),
         'time_format' => get_option('time_format'),
         'start_of_week' => get_option('start_of_week'),
-        'currency' => function_exists('get_woocommerce_currency') ? get_woocommerce_currency() : 'EUR',
+        'currency' => (class_exists('WooCommerce') && function_exists('get_woocommerce_currency') && did_action('woocommerce_init')) ? get_woocommerce_currency() : 'EUR',
         'logo' => malet_torrent_get_custom_logo(),
         'theme_version' => MALETNEXT_VERSION,
     );
@@ -633,8 +635,8 @@ function malet_torrent_get_menu($request) {
  * Obtenir productes destacats
  */
 function malet_torrent_get_featured_products($request) {
-    if (!class_exists('WooCommerce')) {
-        return new WP_Error('woocommerce_not_active', 'WooCommerce is not active', array('status' => 500));
+    if (!class_exists('WooCommerce') || !did_action('woocommerce_init')) {
+        return new WP_Error('woocommerce_not_ready', 'WooCommerce is not ready', array('status' => 500));
     }
     
     $args = array(
@@ -683,8 +685,8 @@ function malet_torrent_get_featured_products($request) {
  * Obtenir configuració de WooCommerce
  */
 function malet_torrent_get_woocommerce_config($request) {
-    if (!class_exists('WooCommerce')) {
-        return new WP_Error('woocommerce_not_active', 'WooCommerce is not active', array('status' => 500));
+    if (!class_exists('WooCommerce') || !did_action('woocommerce_init')) {
+        return new WP_Error('woocommerce_not_ready', 'WooCommerce is not ready', array('status' => 500));
     }
     
     return array(
@@ -711,8 +713,8 @@ function malet_torrent_get_woocommerce_config($request) {
  * Obtenir categories de productes WooCommerce
  */
 function malet_torrent_get_product_categories($request) {
-    if (!class_exists('WooCommerce')) {
-        return new WP_Error('woocommerce_not_active', 'WooCommerce is not active', array('status' => 500));
+    if (!class_exists('WooCommerce') || !did_action('woocommerce_init')) {
+        return new WP_Error('woocommerce_not_ready', 'WooCommerce is not ready', array('status' => 500));
     }
     
     // Obtenir paràmetres de la request
@@ -801,8 +803,8 @@ function malet_torrent_get_product_categories($request) {
  * Obtenir customers (proxy per facilitar frontend)
  */
 function malet_torrent_get_customers($request) {
-    if (!class_exists('WooCommerce')) {
-        return new WP_Error('woocommerce_not_active', 'WooCommerce is not active', array('status' => 500));
+    if (!class_exists('WooCommerce') || !did_action('woocommerce_init')) {
+        return new WP_Error('woocommerce_not_ready', 'WooCommerce is not ready', array('status' => 500));
     }
     
     $per_page = $request->get_param('per_page') ?: 10;
@@ -847,8 +849,8 @@ function malet_torrent_get_customers($request) {
  * Obtenir orders (proxy per facilitar frontend)
  */
 function malet_torrent_get_orders($request) {
-    if (!class_exists('WooCommerce')) {
-        return new WP_Error('woocommerce_not_active', 'WooCommerce is not active', array('status' => 500));
+    if (!class_exists('WooCommerce') || !did_action('woocommerce_init')) {
+        return new WP_Error('woocommerce_not_ready', 'WooCommerce is not ready', array('status' => 500));
     }
     
     $per_page = $request->get_param('per_page') ?: 10;
@@ -1039,7 +1041,7 @@ function malet_torrent_settings_page() {
                     <li><?php echo (class_exists('LimitLoginAttempts')) ? '✅' : '❌'; ?> Limit Login Attempts</li>
                     <li><?php echo (class_exists('UpdraftPlus')) ? '✅' : '❌'; ?> UpdraftPlus Backup</li>
                     <li><?php echo (class_exists('RedisObjectCache')) ? '✅' : '❌'; ?> Redis Object Cache</li>
-                    <li><?php echo (class_exists('autoptimizeMain')) ? '✅' : '❌'; ?> Autoptimize</li>
+                    <!-- Autoptimize eliminat - 7 setembre 2025 -->
                 </ul>
             </div>
             
@@ -1112,41 +1114,11 @@ function malet_torrent_set_default_settings() {
         update_option('WPLANG', 'ca');
     }
     
-    // Crear directoris necessaris per plugins
-    malet_torrent_create_required_directories();
+    // Directoris per plugins eliminats - 7 setembre 2025
 }
 add_action('after_switch_theme', 'malet_torrent_set_default_settings');
 
-/**
- * Crear directoris necessaris per plugins
- */
-function malet_torrent_create_required_directories() {
-    $upload_dir = wp_upload_dir();
-    $base_dir = $upload_dir['basedir'];
-    
-    // Directoris necessaris per Autoptimize
-    $required_dirs = array(
-        $base_dir . '/ao_ccss',
-        $base_dir . '/autoptimize',
-        $base_dir . '/autoptimize/css',
-        $base_dir . '/autoptimize/js'
-    );
-    
-    foreach ($required_dirs as $dir) {
-        if (!file_exists($dir)) {
-            wp_mkdir_p($dir);
-            
-            // Crear fitxer index.html per seguretat
-            $index_file = $dir . '/index.html';
-            if (!file_exists($index_file)) {
-                file_put_contents($index_file, '<!-- Silence is golden. -->');
-            }
-        }
-    }
-}
-
-// Executar en init per assegurar que els directoris existeixen
-add_action('init', 'malet_torrent_create_required_directories');
+// Codi d'Autoptimize eliminat - 7 setembre 2025
 
 /**
  * Missatge d'activació del tema
@@ -1186,9 +1158,14 @@ add_filter('woocommerce_show_admin_notice', function($show, $notice) {
     return $show;
 }, 10, 2);
 
-// Marcar com completat l'onboarding
+// Marcar com completat l'onboarding i forçar càrrega de traduccions
 add_action('init', function() {
     if (class_exists('WooCommerce')) {
+        // Forçar càrrega de traduccions WooCommerce primer
+        if (!is_textdomain_loaded('woocommerce')) {
+            load_plugin_textdomain('woocommerce');
+        }
+        
         update_option('woocommerce_onboarding_profile', array(
             'completed' => true,
             'skipped' => true
@@ -1196,7 +1173,154 @@ add_action('init', function() {
         update_option('woocommerce_task_list_complete', 'yes');
         update_option('woocommerce_extended_task_list_complete', 'yes');
     }
-});
+}, 1);
+
+/**
+ * Permisos personalitzats per customers a l'API WooCommerce
+ */
+// Permetre als customers accedir a les seves pròpies dades
+add_filter('woocommerce_rest_check_permissions', 'malet_torrent_customer_api_permissions', 10, 4);
+
+function malet_torrent_customer_api_permissions($permission, $context, $object_id, $post_type) {
+    $current_user = wp_get_current_user();
+    
+    // Si no hi ha usuari autenticat, mantenir permisos per defecte
+    if (!$current_user->exists()) {
+        return $permission;
+    }
+    
+    // Només aplicar a usuaris amb rol 'customer'
+    if (!in_array('customer', $current_user->roles)) {
+        return $permission;
+    }
+    
+    // Obtenir el context de la petició API actual
+    $route = $_SERVER['REQUEST_URI'] ?? '';
+    
+    // Per customer data: verificar que només accedeixin al seu propi perfil
+    if (strpos($route, '/wp-json/wc/') !== false && strpos($route, '/customers') !== false) {
+        // Si s'especifica un ID específic
+        if (preg_match('/customers\/(\d+)/', $route, $matches)) {
+            $requested_customer_id = intval($matches[1]);
+            if ($requested_customer_id != $current_user->ID) {
+                // Denegar accés a altres perfils
+                return new WP_Error('rest_customer_invalid_id', 'You can only access your own customer data.', array('status' => 403));
+            }
+        }
+        // Permetre accés al endpoint general o al seu propi perfil
+        return true;
+    }
+    
+    // Per orders: només les seves pròpies
+    if (strpos($route, '/wp-json/wc/') !== false && strpos($route, '/orders') !== false) {
+        // Si s'especifica un ID específic d'order
+        if (preg_match('/orders\/(\d+)/', $route, $matches)) {
+            $order_id = intval($matches[1]);
+            $order = wc_get_order($order_id);
+            if (!$order || $order->get_customer_id() != $current_user->ID) {
+                return new WP_Error('rest_order_invalid_id', 'You can only access your own orders.', array('status' => 403));
+            }
+        }
+        // Permetre accés al endpoint general (es filtra després)
+        return true;
+    }
+    
+    // Per downloads: només els seus propis
+    if (strpos($route, '/wp-json/wc/') !== false && strpos($route, '/downloads') !== false) {
+        return true;
+    }
+    
+    // Denegar accés a altres endpoints WooCommerce per customers
+    if (strpos($route, '/wp-json/wc/') !== false) {
+        return new WP_Error('rest_woocommerce_access_denied', 'You do not have permission to access this endpoint.', array('status' => 403));
+    }
+    
+    return $permission;
+}
+
+/**
+ * Filtrar consultes d'orders per mostrar només les del customer actual
+ */
+add_filter('woocommerce_rest_orders_prepare_object_query', 'malet_torrent_filter_customer_orders', 10, 2);
+
+function malet_torrent_filter_customer_orders($args, $request) {
+    $current_user = wp_get_current_user();
+    
+    // Només aplicar a usuaris amb rol 'customer'
+    if (!$current_user->exists() || !in_array('customer', $current_user->roles)) {
+        return $args;
+    }
+    
+    // Forçar que només es mostrin orders del customer actual
+    $args['customer'] = $current_user->ID;
+    
+    return $args;
+}
+
+/**
+ * Filtrar consultes de customers per mostrar només el perfil propi
+ */
+add_filter('woocommerce_rest_customer_query', 'malet_torrent_filter_customer_data', 10, 2);
+
+function malet_torrent_filter_customer_data($args, $request) {
+    $current_user = wp_get_current_user();
+    
+    // Només aplicar a usuaris amb rol 'customer'  
+    if (!$current_user->exists() || !in_array('customer', $current_user->roles)) {
+        return $args;
+    }
+    
+    // Forçar que només es mostri el perfil del customer actual
+    $args['include'] = array($current_user->ID);
+    
+    return $args;
+}
+
+/**
+ * Permetre Basic Authentication per desenvolupament 
+ */
+add_filter('determine_current_user', 'malet_torrent_basic_auth_handler', 5);
+
+function malet_torrent_basic_auth_handler($user_id) {
+    // Només per peticions a l'API
+    if (!defined('REST_REQUEST') || !REST_REQUEST) {
+        return $user_id;
+    }
+    
+    // Si ja hi ha un usuari autenticat, no fer res
+    if ($user_id) {
+        return $user_id;
+    }
+    
+    // Verificar si hi ha credencials Basic Auth en diferents formats
+    $username = '';
+    $password = '';
+    
+    if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $auth = $_SERVER['HTTP_AUTHORIZATION'];
+        if (strpos($auth, 'Basic ') === 0) {
+            $credentials = base64_decode(substr($auth, 6));
+            if ($credentials && strpos($credentials, ':') !== false) {
+                list($username, $password) = explode(':', $credentials, 2);
+            }
+        }
+    } elseif (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
+        $username = $_SERVER['PHP_AUTH_USER'];
+        $password = $_SERVER['PHP_AUTH_PW'];
+    }
+    
+    if (empty($username) || empty($password)) {
+        return $user_id;
+    }
+    
+    // Verificar credencials
+    $user = wp_authenticate($username, $password);
+    
+    if (is_wp_error($user)) {
+        return $user_id;
+    }
+    return $user->ID;
+}
 
 /**
  * Solucionar problemes d'autenticació API WooCommerce en desenvolupament
@@ -1214,9 +1338,9 @@ add_filter('woocommerce_rest_check_permissions', function($permission, $context,
     return $permission;
 }, 10, 4);
 
-// Assegurar que les claus API funcionen sense SSL
-add_action('init', function() {
+// Assegurar que les claus API funcionen sense SSL - DESACTIVAT per evitar problemes SSL locals
+/*add_action('init', function() {
     if (class_exists('WooCommerce') && defined('WP_DEBUG') && WP_DEBUG) {
         $_SERVER['HTTPS'] = 'on'; // Simular HTTPS per WooCommerce
     }
-}, 1);
+}, 1);*/

@@ -76,11 +76,6 @@ class Malet_Torrent_JWT_Auth {
             'callback' => array($this, 'register_user'),
             'permission_callback' => '__return_true',
             'args' => array(
-                'username' => array(
-                    'required' => true,
-                    'type' => 'string',
-                    'sanitize_callback' => 'sanitize_user'
-                ),
                 'email' => array(
                     'required' => true,
                     'type' => 'string',
@@ -91,17 +86,18 @@ class Malet_Torrent_JWT_Auth {
                     'type' => 'string'
                 ),
                 'first_name' => array(
-                    'required' => false,
+                    'required' => true,
                     'type' => 'string',
                     'sanitize_callback' => 'sanitize_text_field'
                 ),
                 'last_name' => array(
-                    'required' => false,
+                    'required' => true,
                     'type' => 'string',
                     'sanitize_callback' => 'sanitize_text_field'
-                )
+                ),
             )
         ));
+        
         
         // Endpoint per login
         register_rest_route('maletnext/v1', '/auth/login', array(
@@ -156,18 +152,60 @@ class Malet_Torrent_JWT_Auth {
     }
     
     /**
+     * Generar nom d'usuari únic basat en nom i cognoms
+     */
+    private function generate_unique_username($first_name, $last_name) {
+        // Generar username base (joan_puig)
+        $base_username = sanitize_user(
+            strtolower($first_name . '_' . $last_name),
+            true
+        );
+        
+        // Eliminar accents i caràcters especials
+        $base_username = remove_accents($base_username);
+        $base_username = preg_replace('/[^a-z0-9_]/', '', $base_username);
+        
+        // Assegurar que no està buit
+        if (empty($base_username)) {
+            $base_username = 'user_' . time();
+        }
+        
+        // Si no existeix, retornar-lo
+        if (!username_exists($base_username)) {
+            return $base_username;
+        }
+        
+        // Si existeix, afegir números fins trobar un disponible
+        $counter = 1;
+        $username = $base_username;
+        
+        while (username_exists($username)) {
+            $username = $base_username . $counter;
+            $counter++;
+            
+            // Límit de seguretat
+            if ($counter > 999) {
+                // Afegir timestamp per garantir unicitat
+                $username = $base_username . '_' . time();
+                break;
+            }
+        }
+        
+        return $username;
+    }
+    
+    /**
      * Registrar usuari amb rol customer
      */
     public function register_user($request) {
-        $username = $request->get_param('username');
         $email = $request->get_param('email');
         $password = $request->get_param('password');
-        $first_name = $request->get_param('first_name') ?: '';
-        $last_name = $request->get_param('last_name') ?: '';
+        $first_name = $request->get_param('first_name');
+        $last_name = $request->get_param('last_name');
         
         // Validacions
-        if (username_exists($username)) {
-            return new WP_Error('username_exists', 'El nom d\'usuari ja existeix', array('status' => 400));
+        if (empty($first_name) || empty($last_name)) {
+            return new WP_Error('missing_names', 'Nom i cognoms són obligatoris', array('status' => 400));
         }
         
         if (email_exists($email)) {
@@ -178,41 +216,48 @@ class Malet_Torrent_JWT_Auth {
             return new WP_Error('weak_password', 'La contrasenya ha de tenir almenys 8 caràcters', array('status' => 400));
         }
         
-        // Crear usuari
-        $user_data = array(
-            'user_login' => $username,
-            'user_email' => $email,
-            'user_pass' => $password,
-            'first_name' => $first_name,
-            'last_name' => $last_name,
-            'role' => 'customer'
-        );
+        // Sempre generar username únic automàticament
+        $username = $this->generate_unique_username($first_name, $last_name);
         
-        $user_id = wp_insert_user($user_data);
+        // Crear usuari
+        $user_id = wp_create_user($username, $password, $email);
         
         if (is_wp_error($user_id)) {
-            return new WP_Error('registration_failed', 'Error al registrar l\'usuari: ' . $user_id->get_error_message(), array('status' => 500));
+            return new WP_Error('registration_failed', $user_id->get_error_message(), array('status' => 400));
         }
         
+        // Actualitzar meta dades
+        wp_update_user(array(
+            'ID' => $user_id,
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+            'display_name' => $first_name . ' ' . $last_name
+        ));
+        
+        // Assignar rol de customer per WooCommerce
+        $user = new WP_User($user_id);
+        $user->set_role('customer');
+        
+        // Obtenir objecte usuari per generar tokens
         $user = get_user_by('id', $user_id);
         
-        // Generar tokens
+        // Generar tokens JWT
         $tokens = $this->generate_tokens($user);
         
         return array(
             'success' => true,
-            'message' => 'Usuari registrat correctament',
             'user' => array(
-                'id' => $user->ID,
-                'username' => $user->user_login,
-                'email' => $user->user_email,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'role' => 'customer'
+                'id' => $user_id,
+                'username' => $username, // Username generat automàticament
+                'email' => $email,
+                'display_name' => $first_name . ' ' . $last_name,
+                'first_name' => $first_name,
+                'last_name' => $last_name
             ),
             'tokens' => $tokens
         );
     }
+    
     
     /**
      * Login d'usuari
