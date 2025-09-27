@@ -125,11 +125,14 @@ class Malet_Torrent_Admin_Notices {
             }
             
             // Show optional plugins notice (only if required and recommended are done)
+            // DESACTIVAT: No mostrem notificacions de plugins opcionals
+            /*
             if (empty($status['recommended']['missing']) && empty($status['recommended']['inactive'])) {
                 if (!$this->is_notice_dismissed('optional') && !empty($status['optional']['missing'])) {
                     $this->display_optional_plugins_notice($status['optional']);
                 }
             }
+            */
         }
     }
     
@@ -280,8 +283,12 @@ class Malet_Torrent_Admin_Notices {
     
     /**
      * Display optional plugins notice
+     * DESACTIVAT: No mostrem notificacions de plugins opcionals
      */
     private function display_optional_plugins_notice($status) {
+        // Funció desactivada - no mostrem notificacions de plugins opcionals
+        return;
+
         if (empty($status['missing'])) {
             return;
         }

@@ -6,7 +6,20 @@
       "WebSearch",
       "Bash(docker exec:*)",
       "Bash(docker ps:*)",
-      "Read(//mnt/c/Users/OriolTestart/Projectes/**)"
+      "Read(//mnt/c/Users/OriolTestart/Projectes/**)",
+      "Bash(docker-compose:*)",
+      "Bash(docker inspect:*)",
+      "Bash(docker volume:*)",
+      "Bash(curl:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_close",
+      "Bash(docker stop:*)",
+      "Bash(docker rm:*)",
+      "WebFetch(domain:www.malet.cat)",
+      "Read(//c/mnt/c/Users/OriolTestart/Projectes/**)",
+      "mcp__sequential-thinking__sequentialthinking"
     ],
     "deny": [],
     "ask": []

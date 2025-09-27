@@ -32,13 +32,49 @@ Next.js Frontend (malet.testart.cat)
 - **Auto Deploy**: ✅ Activat
 
 ### 💾 Volums Persistents
-**⚠️ IMPORTANT**: Per preservar plugins i uploads entre desplegaments
+**⚠️ IMPORTANT**: Per preservar plugins, uploads i configuració entre desplegaments
 
-Volums configurats al Dockerfile:
-- `/var/www/html/wp-content/uploads` - Fitxers multimèdia
-- `/var/www/html/wp-content/plugins` - Plugins instal·lats
+#### Volums Docker Compose (Desenvolupament):
+- `db_data` - Base de dades MariaDB persistent
+- `wp_plugins_data` - Plugins WordPress (Contact Form 7, Flamingo, etc.)
+- `wp_uploads_data` - Fitxers multimèdia i uploads
+- `wp_content_data` - Contingut general wp-content
+- `redis_data` - Cache Redis persistent
 
-**Configuració actual**: Volums definits al Dockerfile i gestionats automàticament per Docker.
+#### Plugins Instal·lats Automàticament:
+
+**REQUERITS** (Crítics):
+- **WooCommerce** (10.2.1) - Plataforma e-commerce per melindros
+- **Contact Form 7** (6.1.1) - Gestió de formularis
+- **JWT Authentication** (1.4.0) - Autenticació via tokens JWT
+
+**MOLT RECOMANATS** (Seguretat):
+- **Wordfence Security** (8.1.0) - Firewall i protecció malware
+- **Limit Login Attempts** (2.26.23) - Protecció força bruta
+
+**RECOMANATS** (Rendiment):
+- **WP Super Cache** (3.0.1) - Cache de pàgines
+- **Redis Object Cache** (2.6.5) - Cache d'objectes
+
+**FORMULARIS I UTILITATS**:
+- **Flamingo** (2.6) - Emmagatzematge de submissions
+- **WP Mail SMTP** (4.6.0) - Gestió d'emails via MailHog
+- **Duplicate Post** (4.5) - Duplicar contingut
+
+#### Configuració Automàtica Inicial:
+- Usuari `orioltestart` amb Application Passwords
+- Formulari de contacte bàsic configurat
+- `WP_ENVIRONMENT_TYPE` llegit de variables d'entorn
+- Tema `malet-torrent` activat automàticament
+- **WooCommerce configurat bàsicament** (Arbúcies, EUR, guest checkout)
+- **WP Mail SMTP configurat** per MailHog
+- **Redis Object Cache** activat automàticament
+
+**Configuració actual**: Volums específics per evitar pèrdua de dades i configuració automàtica completa.
+
+#### Scripts de Gestió:
+- `scripts/backup-db.sh` - Backup automàtic de la base de dades
+- **Rebuild safe**: Ara es poden eliminar volums sense perdre configuració bàsica
 
 **Instruccions per configurar mounts manuals a Dokploy** (si es necessiten):
 1. Accedir al panell de Dokploy de l'aplicació `malet-wp-theme-complete-9mr0ul`
@@ -286,10 +322,16 @@ docker exec -it malet-wp-theme-complete-9mr0ul /usr/local/bin/setup-github-const
 ## 📊 Monitorització
 
 ### URLs Importants
-- **Site**: https://wp2.malet.testart.cat/
-- **Admin**: https://wp2.malet.testart.cat/wp-admin/
-- **API**: https://wp2.malet.testart.cat/wp-json/
+- **Site**: https://wp2.malet.testart.cat/ (producció) / http://localhost:8080 (local)
+- **Admin**: https://wp2.malet.testart.cat/wp-admin/ (producció) / http://localhost:8080/wp-admin (local)
+- **API**: https://wp2.malet.testart.cat/wp-json/ (producció) / http://localhost:8080/wp-json (local)
 - **Frontend**: https://malet.testart.cat/ (Next.js)
+
+### URLs Desenvolupament Local
+- **WordPress**: http://localhost:8080
+- **phpMyAdmin**: http://localhost:8081
+- **MailHog**: http://localhost:8025 (interfície web emails)
+- **SMTP MailHog**: localhost:1025 (port SMTP)
 
 ### Logs de Dokploy
 - Path: `/etc/dokploy/logs/malet-wp-theme-complete-9mr0ul/`
@@ -348,6 +390,43 @@ docker exec -it malet-wp-theme-complete-9mr0ul /usr/local/bin/setup-github-const
 - **Desplegament**: Automàtic via GitHub webhook
 - **Theme**: malet-torrent actiu i funcional
 
+## 📝 API de Formularis (Forms API)
+
+### Endpoints Disponibles
+- `GET /malet-torrent/v1/forms` - Llistar formularis
+- `GET /malet-torrent/v1/forms/{id}` - Obtenir formulari específic
+- `POST /malet-torrent/v1/forms/submit` - Enviar formulari
+- `GET /malet-torrent/v1/forms/submissions` - Obtenir submissions (admin)
+
+### Credencials API
+- **Usuari**: `orioltestart`
+- **Password**: `Arbucies8`
+- **Application Password Frontend**: `tlgEkZt6z6wHkB29q8E3nuy8`
+- **Application Password Formularis**: `wGXHbXdlGh81QXBQFcXa6YW2`
+
+### Configuració
+- **WP_ENVIRONMENT_TYPE**: `local`
+- **APPLICATION_PASSWORDS_ENABLED**: `true`
+- **Plugins**: Contact Form 7 6.1.1, Flamingo 2.6, WP Mail SMTP 4.6.0
+- **Email SMTP**: Configurat per MailHog (localhost:1025)
+- **Redis Cache**: Configurable per variables d'entorn
+- **Documentació completa**: `FORMS_API_DOCUMENTATION.md`
+
+### Variables d'Entorn Redis
+Configuració flexible del servidor Redis per Object Cache:
+```bash
+REDIS_HOST=redis                    # Host del servidor Redis (defecte: redis)
+REDIS_PORT=6379                     # Port del servidor Redis (defecte: 6379)
+REDIS_DATABASE=0                    # Base de dades Redis (defecte: 0)
+REDIS_PASSWORD=your_password        # Password Redis
+REDIS_URL=redis://user:pass@host:port/db  # URL completa (opcional, sobreescriu altres)
+```
+
+**Exemples d'ús:**
+- **Desenvolupament local**: Usar valors per defecte
+- **Producció**: `REDIS_URL=redis://username:password@redis-server:6379/0`
+- **Redis Cloud**: `REDIS_URL=rediss://user:pass@endpoint:port/db`
+
 ### Pendents
 - [ ] Configurar constants GitHub per actualitzacions automàtiques
 - [ ] Verificar sistema d'actualitzacions del tema
@@ -355,6 +434,6 @@ docker exec -it malet-wp-theme-complete-9mr0ul /usr/local/bin/setup-github-const
 
 ---
 
-*Documentació actualitzada: 18 d'agost de 2025*
+*Documentació actualitzada: 27 de setembre de 2025*
 *Generat amb Claude Code*
-*Estat: Desplegament resolt exitosament ✅*
+*Estat: Forms API implementat completament ✅*

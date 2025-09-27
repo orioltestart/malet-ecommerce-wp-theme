@@ -60,7 +60,17 @@ services:
       
       # Variables del Tema
       WORDPRESS_THEME_NAME: ${WORDPRESS_THEME_NAME}
-      
+
+      # Environment Type (local, development, staging, production)
+      WP_ENVIRONMENT_TYPE: ${WP_ENVIRONMENT_TYPE:-local}
+
+      # Redis Configuration
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DATABASE: ${REDIS_DATABASE:-0}
+      REDIS_URL: ${REDIS_URL:-}
+
       # Variables per forçar HTTP en desenvolupament
       WP_FORCE_SSL_ADMIN: false
       FORCE_SSL_ADMIN: false
@@ -69,6 +79,8 @@ services:
     volumes:
       - wordpress_data:/var/www/html
       - wp_content_data:/var/www/html/wp-content
+      - wp_plugins_data:/var/www/html/wp-content/plugins
+      - wp_uploads_data:/var/www/html/wp-content/uploads
       # Bind mount del tema per desenvolupament en viu
       - ./:/var/www/html/wp-content/themes/malet-torrent
     networks:
@@ -76,6 +88,32 @@ services:
     ports:
       - "${WORDPRESS_PORT}:80"
 
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: malet_phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - "${PHPMYADMIN_PORT:-8081}:80"
+    networks:
+      - malet_network
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: malet_mailhog
+    restart: unless-stopped
+    ports:
+      - "${MAILHOG_WEB_PORT:-8025}:8025"  # Web UI
+      - "${MAILHOG_SMTP_PORT:-1025}:1025" # SMTP
+    networks:
+      - malet_network
 
 volumes:
   db_data:
@@ -85,6 +123,10 @@ volumes:
   wordpress_data:
     driver: local
   wp_content_data:
+    driver: local
+  wp_plugins_data:
+    driver: local
+  wp_uploads_data:
     driver: local
 
 networks:
