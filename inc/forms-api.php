@@ -49,6 +49,17 @@ function malet_register_forms_endpoints() {
             return current_user_can('manage_options');
         },
     ));
+
+    // Endpoint de debug per verificar últimes submissions (només en mode debug)
+    register_rest_route('malet-torrent/v1', '/forms/debug/recent', array(
+        'methods' => 'GET',
+        'callback' => 'malet_debug_recent_submissions',
+        'permission_callback' => function() {
+            // Només accessible en entorns no productius
+            $environment = wp_get_environment_type();
+            return in_array($environment, array('local', 'development'));
+        },
+    ));
 }
 add_action('rest_api_init', 'malet_register_forms_endpoints');
 
@@ -109,7 +120,7 @@ function malet_get_single_form($request) {
 function malet_submit_form($request) {
     $params = $request->get_params();
 
-    // Validar que tenim ID de formulari
+    // Validacions inicials
     if (!isset($params['form_id'])) {
         return new WP_Error('missing_form_id', 'ID de formulari requerit', array('status' => 400));
     }
@@ -121,41 +132,94 @@ function malet_submit_form($request) {
         return new WP_Error('form_not_found', 'Formulari no trobat', array('status' => 404));
     }
 
-    // Preparar dades per Contact Form 7
-    $_POST = array_merge($_POST, $params);
-    $_POST['_wpcf7'] = $form_id;
-    $_POST['_wpcf7_version'] = WPCF7_VERSION;
-    $_POST['_wpcf7_locale'] = $contact_form->locale();
-    $_POST['_wpcf7_unit_tag'] = 'wpcf7-f' . $form_id . '-p' . get_the_ID() . '-o1';
-    $_POST['_wpcf7_container_post'] = 0;
-
-    // Processar submission
-    $submission = WPCF7_Submission::get_instance($contact_form);
-
-    if (!$submission) {
-        $submission = WPCF7_Submission::get_instance($contact_form, array(
-            'skip_mail' => false,
-        ));
+    // Proteccions de seguretat
+    $rate_limit_check = malet_forms_rate_limiting();
+    if (is_wp_error($rate_limit_check)) {
+        return $rate_limit_check;
     }
 
-    $result = array(
-        'contact_form_id' => $form_id,
-        'status' => $submission ? $submission->get_status() : 'failed',
-        'message' => $submission ? $submission->get_response() : 'Error processant el formulari',
-        'invalid_fields' => array(),
-    );
+    if (!malet_validate_honeypot($params)) {
+        return new WP_Error('spam_detected', 'Spam detectat', array('status' => 403));
+    }
 
-    // Si hi ha errors de validació
-    if ($submission && $submission->get_status() === 'validation_failed') {
-        $invalid_fields = $submission->get_invalid_fields();
-        if ($invalid_fields) {
-            $result['invalid_fields'] = $invalid_fields;
+    // Preparar context per CF7
+    malet_setup_cf7_context($form_id, $contact_form, $params);
+
+    // Processar formulari (dispara hooks de CF7 i Flamingo)
+    $contact_form->submit();
+    $submission = WPCF7_Submission::get_instance();
+
+    if (!$submission) {
+        malet_cleanup_globals();
+        return new WP_Error('submission_failed', 'Error al processar el formulari', array('status' => 500));
+    }
+
+    // Generar resposta
+    $result = malet_build_submission_response($form_id, $submission);
+
+    malet_cleanup_globals();
+
+    return new WP_REST_Response($result, $result['status'] === 'mail_sent' ? 200 : 400);
+}
+
+/**
+ * Configurar context global per CF7
+ */
+function malet_setup_cf7_context($form_id, $contact_form, $params) {
+    $_POST = array();
+
+    // Copiar camps del formulari
+    foreach ($params as $key => $value) {
+        if ($key !== 'form_id') {
+            $_POST[$key] = $value;
         }
     }
 
-    $status_code = ($result['status'] === 'mail_sent') ? 200 : 400;
+    // Metadades CF7
+    $_POST['_wpcf7'] = $form_id;
+    $_POST['_wpcf7_version'] = WPCF7_VERSION;
+    $_POST['_wpcf7_locale'] = $contact_form->locale();
+    $_POST['_wpcf7_unit_tag'] = 'wpcf7-f' . $form_id . '-api-' . time();
+    $_POST['_wpcf7_container_post'] = 0;
+    $_POST['_wpnonce'] = wp_create_nonce('wpcf7-submit');
 
-    return new WP_REST_Response($result, $status_code);
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+
+    if (isset($params['files']) && is_array($params['files'])) {
+        $_FILES = $params['files'];
+    }
+}
+
+/**
+ * Construir resposta per l'API
+ */
+function malet_build_submission_response($form_id, $submission) {
+    $result = array(
+        'contact_form_id' => $form_id,
+        'status' => $submission->get_status(),
+        'message' => $submission->get_response(),
+        'invalid_fields' => array(),
+    );
+
+    // Afegir errors de validació si n'hi ha
+    if ($submission->get_status() === 'validation_failed') {
+        $invalid_fields = $submission->get_invalid_fields();
+        if ($invalid_fields) {
+            foreach ($invalid_fields as $field_name => $field_error) {
+                $result['invalid_fields'][$field_name] = $field_error->get_error_message();
+            }
+        }
+    }
+
+    return $result;
+}
+
+/**
+ * Netejar variables globals
+ */
+function malet_cleanup_globals() {
+    $_POST = array();
+    $_FILES = array();
 }
 
 /**
@@ -250,20 +314,193 @@ function malet_parse_form_fields($form_content) {
 }
 
 /**
+ * Endpoint de debug per verificar últimes submissions
+ * Només accessible en entorns local/development
+ */
+function malet_debug_recent_submissions($request) {
+    $environment = wp_get_environment_type();
+
+    // Verificar entorn
+    if (!in_array($environment, array('local', 'development'))) {
+        return new WP_Error(
+            'debug_disabled',
+            'Aquest endpoint només està disponible en mode desenvolupament',
+            array('status' => 403)
+        );
+    }
+
+    // Verificar que Flamingo està actiu
+    if (!class_exists('Flamingo_Inbound_Message')) {
+        return new WP_REST_Response(array(
+            'environment' => $environment,
+            'flamingo_active' => false,
+            'error' => 'Flamingo no està instal·lat o activat',
+            'submissions' => array(),
+        ), 200);
+    }
+
+    // Obtenir paràmetres opcionals
+    $limit = $request->get_param('limit') ? intval($request->get_param('limit')) : 10;
+    $form_id = $request->get_param('form_id') ? intval($request->get_param('form_id')) : null;
+
+    // Arguments per cercar submissions
+    $args = array(
+        'posts_per_page' => $limit,
+        'orderby' => 'date',
+        'order' => 'DESC',
+    );
+
+    // Filtrar per form_id si es proporciona
+    if ($form_id) {
+        $args['meta_query'] = array(
+            array(
+                'key' => '_contact_form_id',
+                'value' => $form_id,
+                'compare' => '=',
+            ),
+        );
+    }
+
+    // Obtenir submissions
+    $submissions = Flamingo_Inbound_Message::find($args);
+    $total = Flamingo_Inbound_Message::count();
+
+    // Processar submissions amb tots els detalls
+    $submissions_data = array();
+
+    foreach ($submissions as $submission) {
+        $submission_id = $submission->id();
+        $cf7_form_id = get_post_meta($submission_id, '_contact_form_id', true);
+
+        // Obtenir nom del formulari CF7
+        $form_title = 'Unknown';
+        if ($cf7_form_id) {
+            $cf7_form = WPCF7_ContactForm::get_instance($cf7_form_id);
+            if ($cf7_form) {
+                $form_title = $cf7_form->title();
+            }
+        }
+
+        // Formatar dades per debug
+        $date_formatted = 'N/A';
+        if ($submission->date) {
+            $timestamp = strtotime($submission->date);
+            if ($timestamp !== false) {
+                $date_formatted = date('d/m/Y H:i:s', $timestamp);
+            }
+        }
+
+        $submissions_data[] = array(
+            'flamingo_id' => $submission_id,
+            'cf7_form_id' => $cf7_form_id,
+            'cf7_form_title' => $form_title,
+            'subject' => $submission->subject,
+            'from' => $submission->from,
+            'from_name' => $submission->from_name,
+            'from_email' => $submission->from_email,
+            'date' => $submission->date,
+            'date_formatted' => $date_formatted,
+            'fields' => $submission->fields,
+            'meta' => $submission->meta,
+        );
+    }
+
+    // Resposta detallada per debug
+    return new WP_REST_Response(array(
+        'debug_info' => array(
+            'environment' => $environment,
+            'timestamp' => current_time('mysql'),
+            'timezone' => wp_timezone_string(),
+            'flamingo_active' => true,
+            'cf7_version' => defined('WPCF7_VERSION') ? WPCF7_VERSION : 'unknown',
+        ),
+        'query_info' => array(
+            'limit' => $limit,
+            'form_id_filter' => $form_id,
+            'total_submissions' => $total,
+            'showing' => count($submissions_data),
+        ),
+        'submissions' => $submissions_data,
+        'usage' => array(
+            'endpoint' => '/wp-json/malet-torrent/v1/forms/debug/recent',
+            'parameters' => array(
+                'limit' => '(optional) Number of submissions to show (default: 10)',
+                'form_id' => '(optional) Filter by Contact Form 7 ID',
+            ),
+            'example' => '/wp-json/malet-torrent/v1/forms/debug/recent?limit=5&form_id=85',
+        ),
+    ), 200);
+}
+
+/**
  * Afegir headers CORS específics per formularis
  */
 function malet_forms_cors_headers() {
-    $allowed_origin = get_option('malet_frontend_url', 'https://malet.testart.cat');
+    // Detectar entorn actual
+    $environment = wp_get_environment_type();
 
-    // Permetre origen del frontend
-    header("Access-Control-Allow-Origin: " . $allowed_origin);
-    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+    // Definir origins permesos segons entorn
+    $allowed_origins = array();
+
+    switch ($environment) {
+        case 'local':
+        case 'development':
+            $allowed_origins = array(
+                'http://localhost:3000',
+                'http://localhost:3001',
+                'http://127.0.0.1:3000',
+            );
+            break;
+
+        case 'staging':
+            $allowed_origins = array(
+                'https://staging.malet.testart.cat',
+                'https://malet.testart.cat',
+            );
+            break;
+
+        case 'production':
+            $allowed_origins = array(
+                'https://malet.cat',
+                'https://www.malet.cat',
+            );
+            break;
+
+        default:
+            // Fallback a valor de configuració
+            $custom_origin = get_option('malet_frontend_url', '');
+            if ($custom_origin) {
+                $allowed_origins = array($custom_origin);
+            }
+            break;
+    }
+
+    // Obtenir origin de la petició
+    $request_origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+
+    // Verificar si l'origin està permès
+    $allowed_origin = '*'; // Per defecte permetre tots (només per desenvolupament)
+
+    if (in_array($request_origin, $allowed_origins)) {
+        $allowed_origin = $request_origin;
+    } elseif ($environment === 'production' || $environment === 'staging') {
+        // En producció/staging, només permetre origins definits
+        $allowed_origin = !empty($allowed_origins) ? $allowed_origins[0] : '';
+    }
+
+    // Configurar headers CORS
+    if ($allowed_origin) {
+        header("Access-Control-Allow-Origin: " . $allowed_origin);
+    }
+
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-WP-Nonce");
     header("Access-Control-Allow-Credentials: true");
 
     // Per peticions OPTIONS (preflight)
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
         header("Access-Control-Max-Age: 86400");
+        status_header(200);
         exit(0);
     }
 }
@@ -273,6 +510,12 @@ add_action('rest_api_init', 'malet_forms_cors_headers', 5);
  * Configurar rate limiting per formularis
  */
 function malet_forms_rate_limiting() {
+    // Desactivat temporalment per testing
+    $environment = wp_get_environment_type();
+    if (in_array($environment, array('local', 'development'))) {
+        return true;
+    }
+
     $transient_key = 'malet_form_submit_' . $_SERVER['REMOTE_ADDR'];
     $submissions = get_transient($transient_key);
 
@@ -304,3 +547,44 @@ function malet_validate_honeypot($params) {
 
     return true;
 }
+
+/**
+ * Guardar form_id a Flamingo després de submission
+ * Això complementa flamingo_subject, flamingo_name i flamingo_email
+ */
+function malet_save_form_id_to_flamingo($contact_form) {
+    if (!class_exists('Flamingo_Inbound_Message')) {
+        return;
+    }
+
+    $submission = WPCF7_Submission::get_instance();
+    if (!$submission || $submission->get_status() !== 'mail_sent') {
+        return;
+    }
+
+    // Buscar última submission per IP
+    $messages = Flamingo_Inbound_Message::find(array(
+        'posts_per_page' => 1,
+        'orderby' => 'date',
+        'order' => 'DESC',
+    ));
+
+    if (empty($messages)) {
+        return;
+    }
+
+    $message = $messages[0];
+    $message_id = $message->id();
+    $message_meta = get_post_meta($message_id, '_meta', true);
+
+    // Verificar que és la mateixa IP (seguretat)
+    if (!is_array($message_meta) ||
+        !isset($message_meta['remote_ip']) ||
+        $message_meta['remote_ip'] !== $_SERVER['REMOTE_ADDR']) {
+        return;
+    }
+
+    // Guardar form_id
+    update_post_meta($message_id, '_contact_form_id', $contact_form->id());
+}
+add_action('wpcf7_mail_sent', 'malet_save_form_id_to_flamingo');

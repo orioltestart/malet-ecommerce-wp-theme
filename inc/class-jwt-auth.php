@@ -71,7 +71,7 @@ class Malet_Torrent_JWT_Auth {
      */
     public function register_auth_endpoints() {
         // Endpoint per registre d'usuaris
-        register_rest_route('maletnext/v1', '/auth/register', array(
+        register_rest_route('malet-torrent/v1', '/auth/register', array(
             'methods' => 'POST',
             'callback' => array($this, 'register_user'),
             'permission_callback' => '__return_true',
@@ -100,7 +100,7 @@ class Malet_Torrent_JWT_Auth {
         
         
         // Endpoint per login
-        register_rest_route('maletnext/v1', '/auth/login', array(
+        register_rest_route('malet-torrent/v1', '/auth/login', array(
             'methods' => 'POST',
             'callback' => array($this, 'login_user'),
             'permission_callback' => '__return_true',
@@ -117,7 +117,7 @@ class Malet_Torrent_JWT_Auth {
         ));
         
         // Endpoint per refresh token
-        register_rest_route('maletnext/v1', '/auth/refresh', array(
+        register_rest_route('malet-torrent/v1', '/auth/refresh', array(
             'methods' => 'POST',
             'callback' => array($this, 'refresh_token'),
             'permission_callback' => '__return_true',
@@ -130,21 +130,21 @@ class Malet_Torrent_JWT_Auth {
         ));
         
         // Endpoint per validar sessió
-        register_rest_route('maletnext/v1', '/auth/validate', array(
+        register_rest_route('malet-torrent/v1', '/auth/validate', array(
             'methods' => 'POST',
             'callback' => array($this, 'validate_session'),
             'permission_callback' => array($this, 'validate_jwt_token')
         ));
         
         // Endpoint per logout
-        register_rest_route('maletnext/v1', '/auth/logout', array(
+        register_rest_route('malet-torrent/v1', '/auth/logout', array(
             'methods' => 'POST',
             'callback' => array($this, 'logout_user'),
             'permission_callback' => array($this, 'validate_jwt_token')
         ));
         
         // Endpoint per obtenir perfil d'usuari
-        register_rest_route('maletnext/v1', '/auth/profile', array(
+        register_rest_route('malet-torrent/v1', '/auth/profile', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_user_profile'),
             'permission_callback' => array($this, 'validate_jwt_token')
@@ -548,7 +548,7 @@ class Malet_Torrent_JWT_Auth {
             return $result;
         }
         
-        if (strpos($_SERVER['REQUEST_URI'], '/wp-json/maletnext/v1/auth/') !== false) {
+        if (strpos($_SERVER['REQUEST_URI'], '/wp-json/malet-torrent/v1/auth/') !== false) {
             return null;
         }
         
@@ -559,7 +559,7 @@ class Malet_Torrent_JWT_Auth {
      * CORS per endpoints JWT
      */
     public function add_jwt_cors_support() {
-        if (strpos($_SERVER['REQUEST_URI'], '/wp-json/maletnext/v1/auth/') !== false) {
+        if (strpos($_SERVER['REQUEST_URI'], '/wp-json/malet-torrent/v1/auth/') !== false) {
             header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
             header('Access-Control-Expose-Headers: Authorization');
         }

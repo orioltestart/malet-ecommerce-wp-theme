@@ -211,10 +211,10 @@ class Malet_Torrent_WooCommerce_Email_Templates {
                                 <?php echo esc_html($item->get_quantity()); ?>
                             </td>
                             <td style="text-align: right;">
-                                <?php echo wp_kses_post($order->get_formatted_line_subtotal($item)); ?>
+                                <?php echo wc_price($item->get_subtotal()); ?>
                             </td>
                             <td style="text-align: right;">
-                                <strong><?php echo wp_kses_post($order->get_formatted_line_total($item, false, true)); ?></strong>
+                                <strong><?php echo wc_price($item->get_total()); ?></strong>
                             </td>
                         </tr>
                     <?php endforeach; ?>

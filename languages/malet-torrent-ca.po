@@ -1,0 +1,46 @@
+# Translation file for Malet Torrent theme
+# Copyright (C) 2025 Malet Torrent
+# This file is distributed under the same license as the Malet Torrent package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Malet Torrent 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-12 00:00+0000\n"
+"PO-Revision-Date: 2025-10-12 00:00+0000\n"
+"Last-Translator: Oriol Testart <oriol@malet.cat>\n"
+"Language-Team: Català\n"
+"Language: ca\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# Email templates - Customer Processing Order
+msgid "Hola %s,"
+msgstr "Hola %s,"
+
+msgid "Gràcies per la vostra comanda! Hem rebut correctament la vostra sol·licitud i ja estem preparant els vostres melindros artesans."
+msgstr "Gràcies per la vostra comanda! Hem rebut correctament la vostra sol·licitud i ja estem preparant els vostres melindros artesans."
+
+msgid "Els nostres pastissers artesans ja han començat a elaborar la vostra comanda amb el mateix amor i dedicació de sempre. Rebreu una nova notificació quan estigui llesta per enviar o recollir."
+msgstr "Els nostres pastissers artesans ja han començat a elaborar la vostra comanda amb el mateix amor i dedicació de sempre. Rebreu una nova notificació quan estigui llesta per enviar o recollir."
+
+msgid "Gràcies per confiar en Malet Torrent!"
+msgstr "Gràcies per confiar en Malet Torrent!"
+
+# Email templates - Customer Completed Order
+msgid "Bones notícies! La vostra comanda ja està preparada i llesta."
+msgstr "Bones notícies! La vostra comanda ja està preparada i llesta."
+
+msgid "Els vostres productes digitals estan disponibles per descarregar:"
+msgstr "Els vostres productes digitals estan disponibles per descarregar:"
+
+msgid "Esperem que gaudiu dels nostres melindros tradicionals catalans. Gràcies per confiar en Malet Torrent!"
+msgstr "Esperem que gaudiu dels nostres melindros tradicionals catalans. Gràcies per confiar en Malet Torrent!"
+
+# Admin New Order Email
+msgid "Heu rebut una nova comanda de %s:"
+msgstr "Heu rebut una nova comanda de %s:"
+
+msgid "Comanda #%s"
+msgstr "Comanda #%s"

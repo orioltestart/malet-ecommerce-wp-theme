@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Email Templates for Malet Torrent
  * Plantilles d'email personalitzades per Contact Form 7 i WooCommerce
@@ -12,19 +13,22 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class Malet_Torrent_Email_Templates {
+class Malet_Torrent_Email_Templates
+{
 
     /**
      * Constructor
      */
-    public function __construct() {
+    public function __construct()
+    {
         $this->init_hooks();
     }
 
     /**
      * Initialize hooks
      */
-    private function init_hooks() {
+    private function init_hooks()
+    {
         // Contact Form 7 hooks
         add_filter('wpcf7_mail_components', [$this, 'customize_cf7_mail'], 10, 3);
 
@@ -32,6 +36,11 @@ class Malet_Torrent_Email_Templates {
         add_action('woocommerce_email_header', [$this, 'woocommerce_email_header'], 10, 1);
         add_action('woocommerce_email_footer', [$this, 'woocommerce_email_footer'], 10, 1);
         add_filter('woocommerce_email_styles', [$this, 'add_woocommerce_email_styles']);
+        add_filter('woocommerce_email_footer_text', '__return_empty_string', 999);
+
+        // Eliminar textos promocionals de WooCommerce
+        add_filter('woocommerce_get_settings_emails', [$this, 'remove_wc_promo_text'], 999);
+        add_filter('woocommerce_email_get_option', [$this, 'filter_wc_email_options'], 999, 4);
 
         // WordPress Core Email hooks
         add_filter('wp_mail', [$this, 'customize_wp_mail'], 10, 1);
@@ -61,7 +70,8 @@ class Malet_Torrent_Email_Templates {
     /**
      * Get email header HTML
      */
-    public function get_email_header($title = '') {
+    public function get_email_header($title = '')
+    {
         $site_url = home_url();
         // Usar el logo existent del directori assets/img/
         $logo_url = get_template_directory_uri() . '/assets/img/logo.png';
@@ -93,7 +103,6 @@ class Malet_Torrent_Email_Templates {
                             <p>Pastisseria Tradicional Catalana des de 1973</p>
                         </div>
                     </div>
-                    <div class="header-divider"></div>
                 </header>
 
                 <!-- Main Content -->
@@ -102,9 +111,36 @@ class Malet_Torrent_Email_Templates {
     }
 
     /**
-     * Get email footer HTML
+     * Get email footer HTML (versió simple per autoresponders)
      */
-    public function get_email_footer() {
+    public function get_email_footer_simple()
+    {
+        $current_year = date('Y');
+
+        return '
+                </main>
+
+                <!-- Footer Simple -->
+                <footer class="email-footer">
+                    <div class="footer-bottom">
+                        <div class="footer-divider"></div>
+                        <p class="copyright">
+                            © ' . $current_year . ' Malet Torrent. Tots els drets reservats.<br>
+                            <small>Elaborem amb ingredients naturals i seguint les receptes tradicionals catalanes.</small>
+                        </p>
+                    </div>
+                </footer>
+            </div>
+        </body>
+        </html>
+        ';
+    }
+
+    /**
+     * Get email footer HTML (versió completa per administració)
+     */
+    public function get_email_footer()
+    {
         $site_url = home_url();
         $current_year = date('Y');
 
@@ -113,40 +149,6 @@ class Malet_Torrent_Email_Templates {
 
                 <!-- Footer -->
                 <footer class="email-footer">
-                    <div class="footer-content">
-                        <div class="footer-section contact-info">
-                            <h3>📍 Contacte</h3>
-                            <p>
-                                <strong>Adreça:</strong><br>
-                                Carrer Sant Jordi, Nº4<br>
-                                17403 Sant Hilari Sacalm, Girona
-                            </p>
-                            <p>
-                                <strong>📞 Telèfon:</strong> 972 86 93 08<br>
-                                <strong>✉️ Email:</strong> info@malet.cat
-                            </p>
-                        </div>
-
-                        <div class="footer-section social-links">
-                            <h3>🌐 Segueix-nos</h3>
-                            <div class="social-icons">
-                                <a href="https://www.facebook.com/profile.php?id=61557664863691" class="social-link">📘 Facebook</a>
-                                <a href="https://www.instagram.com/pastisseria.malet.torrent/" class="social-link">📷 Instagram</a>
-                                <a href="https://www.youtube.com/@pastisseriamalet" class="social-link">🎥 YouTube</a>
-                            </div>
-                        </div>
-
-                        <div class="footer-section footer-links">
-                            <h3>🔗 Enllaços útils</h3>
-                            <ul>
-                                <li><a href="' . esc_url(FRONTEND_URL . '/productes') . '">Els nostres productes</a></li>
-                                <li><a href="' . esc_url(FRONTEND_URL . '/nosaltres') . '">Sobre nosaltres</a></li>
-                                <li><a href="' . esc_url(FRONTEND_URL . '/contacte') . '">Contacte</a></li>
-                                <li><a href="' . esc_url(FRONTEND_URL . '/politica-privacitat') . '">Política de privacitat</a></li>
-                            </ul>
-                        </div>
-                    </div>
-
                     <div class="footer-bottom">
                         <div class="footer-divider"></div>
                         <p class="copyright">
@@ -167,7 +169,8 @@ class Malet_Torrent_Email_Templates {
     /**
      * Get email CSS styles
      */
-    public function get_email_styles() {
+    public function get_email_styles()
+    {
         return '
         /* Reset i base */
         * {
@@ -198,12 +201,8 @@ class Malet_Torrent_Email_Templates {
         .email-header {
             background: #f2e3d7;
             color: #5b493a;
-            padding: 30px 20px;
+            padding: 15px 20px;
             text-align: center;
-        }
-
-        .header-content {
-            margin-bottom: 20px;
         }
 
         .logo {
@@ -359,7 +358,7 @@ class Malet_Torrent_Email_Templates {
         .email-footer {
             background-color: #5b493a;
             color: white;
-            padding: 40px 30px 20px;
+            padding: 0px 30px 20px;
         }
 
         .footer-content {
@@ -443,15 +442,21 @@ class Malet_Torrent_Email_Templates {
         .copyright {
             font-size: 14px;
             margin-bottom: 10px;
+            color: white !important;
+        }
+
+        .copyright small {
+            color: white !important;
         }
 
         .unsubscribe {
             font-size: 12px;
             opacity: 0.8;
+            color: white !important;
         }
 
         .unsubscribe-link {
-            color: #f2e3d7;
+            color: #f2e3d7 !important;
         }
 
         /* Responsive */
@@ -509,15 +514,27 @@ class Malet_Torrent_Email_Templates {
     /**
      * Customize Contact Form 7 emails
      */
-    public function customize_cf7_mail($components, $cf7, $object) {
-        // Only apply to specific forms (optional)
-        $form_id = $cf7->id();
+    public function customize_cf7_mail($components, $cf7, $object)
+    {
+        // Get form data from submission
+        $submission = WPCF7_Submission::get_instance();
+        if (!$submission) {
+            return $components;
+        }
 
-        // Get form data
-        $form_data = $object->get_posted_data();
+        $form_data = $submission->get_posted_data();
+        $mail_name = $object->name();
 
-        // Create custom email content
-        $custom_content = $this->create_contact_form_email($form_data, $cf7);
+        // Aplicar template diferent segons si és mail principal o autoresponder
+        if ($mail_name === 'mail') {
+            // Email per administrador (amb tots els detalls)
+            $custom_content = $this->create_contact_form_email($form_data, $cf7);
+        } elseif ($mail_name === 'mail_2') {
+            // Email per client (autoresponder elegant)
+            $custom_content = $this->create_autoresponder_email($form_data, $cf7);
+        } else {
+            return $components;
+        }
 
         // Replace the mail body with our custom template
         $components['body'] = $custom_content;
@@ -531,69 +548,96 @@ class Malet_Torrent_Email_Templates {
     /**
      * Create Contact Form email content
      */
-    private function create_contact_form_email($form_data, $cf7) {
+    private function create_contact_form_email($form_data, $cf7)
+    {
         $form_title = $cf7->title();
+
+        // Suportar tant els camps nous (full-name, email...) com els antics (your-name, your-email...)
+        $name = $form_data['full-name'] ?? $form_data['your-name'] ?? '';
+        $email = $form_data['email'] ?? $form_data['your-email'] ?? '';
+        $phone = $form_data['phone'] ?? $form_data['your-phone'] ?? '';
+        $subject = $form_data['subject'] ?? $form_data['your-subject'] ?? '';
+        $message = $form_data['message'] ?? $form_data['your-message'] ?? '';
 
         ob_start();
         echo $this->get_email_header('Nou missatge de contacte - ' . $form_title);
-        ?>
+?>
 
         <div class="success-box">
-            <h1>📧 Nou missatge de contacte rebut</h1>
-            <p>S'ha rebut un nou missatge a través del formulari de contacte del vostre lloc web.</p>
+            <h1>📧 Nou missatge de contacte</h1>
+            <p>Has rebut un nou missatge des del formulari de contacte.</p>
         </div>
 
-        <h2>Detalls del missatge:</h2>
+        <h2>Informació del contacte:</h2>
 
         <div class="info-box">
-            <?php if (!empty($form_data['your-name'])): ?>
-                <p><strong>👤 Nom:</strong> <?php echo esc_html($form_data['your-name']); ?></p>
+            <?php if (!empty($name)): ?>
+                <p><strong>👤 Nom:</strong> <?php echo esc_html($name); ?></p>
             <?php endif; ?>
 
-            <?php if (!empty($form_data['your-email'])): ?>
-                <p><strong>✉️ Email:</strong> <a href="mailto:<?php echo esc_attr($form_data['your-email']); ?>"><?php echo esc_html($form_data['your-email']); ?></a></p>
+            <?php if (!empty($email)): ?>
+                <p><strong>✉️ Email:</strong> <a href="mailto:<?php echo esc_attr($email); ?>"><?php echo esc_html($email); ?></a></p>
             <?php endif; ?>
 
-            <?php if (!empty($form_data['your-phone'])): ?>
-                <p><strong>📞 Telèfon:</strong> <?php echo esc_html($form_data['your-phone']); ?></p>
+            <?php if (!empty($phone)): ?>
+                <p><strong>📞 Telèfon:</strong> <a href="tel:<?php echo esc_attr($phone); ?>"><?php echo esc_html($phone); ?></a></p>
             <?php endif; ?>
 
-            <?php if (!empty($form_data['your-subject'])): ?>
-                <p><strong>📋 Assumpte:</strong> <?php echo esc_html($form_data['your-subject']); ?></p>
+            <?php if (!empty($subject)): ?>
+                <p><strong>📋 Assumpte:</strong> <?php echo esc_html($subject); ?></p>
             <?php endif; ?>
 
             <p><strong>📅 Data:</strong> <?php echo date('d/m/Y H:i'); ?></p>
         </div>
 
-        <?php if (!empty($form_data['your-message'])): ?>
+        <?php if (!empty($message)): ?>
             <h3>💬 Missatge:</h3>
             <div style="background-color: #f2e3d7; padding: 20px; border-radius: 6px; border-left: 4px solid #5b493a; white-space: pre-line;">
-                <?php echo esc_html($form_data['your-message']); ?>
+                <?php echo esc_html($message); ?>
             </div>
         <?php endif; ?>
 
-        <div style="margin: 30px 0;">
-            <h3>🚀 Accions recomanades:</h3>
-            <p>
-                <a href="mailto:<?php echo esc_attr($form_data['your-email']); ?>?subject=Re: <?php echo esc_attr($form_data['your-subject'] ?? 'Consulta'); ?>" class="btn">
-                    Respondre per email
+        <div style="margin: 30px 0; text-align: center;">
+            <a href="mailto:<?php echo esc_attr($email); ?>?subject=Re: <?php echo esc_attr($subject ?: 'Consulta'); ?>" class="btn">
+                Respondre per email
+            </a>
+            <?php if (!empty($phone)): ?>
+                <a href="tel:<?php echo esc_attr($phone); ?>" class="btn btn-secondary">
+                    Trucar
                 </a>
-
-                <?php if (!empty($form_data['your-phone'])): ?>
-                    <a href="tel:<?php echo esc_attr($form_data['your-phone']); ?>" class="btn btn-secondary">
-                        Trucar per telèfon
-                    </a>
-                <?php endif; ?>
-            </p>
+            <?php endif; ?>
         </div>
 
-        <div class="info-box">
-            <h3>🍪 Sobre Malet Torrent</h3>
-            <p>Recordeu que som especialistes en melindros tradicionals catalans elaborats artesanalment amb ingredients naturals. Cada consulta és una oportunitat per compartir la nostra passió per la pastisseria tradicional.</p>
-        </div>
-
-        <?php
+    <?php
         echo $this->get_email_footer();
+
+        return ob_get_clean();
+    }
+
+    /**
+     * Create Autoresponder email content (per al client)
+     */
+    private function create_autoresponder_email($form_data, $cf7)
+    {
+        // Obtenir nom del client
+        $name = $form_data['full-name'] ?? $form_data['your-name'] ?? 'estimat client';
+
+        ob_start();
+        echo $this->get_email_header('Hem rebut el teu missatge');
+    ?>
+
+        <p style="font-size: 18px; color: #333;">Hola <strong><?php echo esc_html($name); ?></strong>,</p>
+
+        <p>Gràcies per contactar amb nosaltres!</p>
+
+        <p>Hem rebut el teu missatge i t'el llegirem amb atenció. <strong>Et respondrem el més aviat possible.</strong></p>
+
+        <p style="margin-top: 30px;">Una forta abraçada,<br>
+            <em style="color: #5b493a; font-weight: 500;">L'equip de Malet Torrent</em>
+        </p>
+
+    <?php
+        echo $this->get_email_footer_simple();
 
         return ob_get_clean();
     }
@@ -601,28 +645,83 @@ class Malet_Torrent_Email_Templates {
     /**
      * WooCommerce email header
      */
-    public function woocommerce_email_header($email_heading) {
+    public function woocommerce_email_header($email_heading)
+    {
         echo $this->get_email_header($email_heading);
     }
 
     /**
-     * WooCommerce email footer
+     * WooCommerce email footer (sense enllaç de baixa - són emails transaccionals)
      */
-    public function woocommerce_email_footer() {
-        echo $this->get_email_footer();
+    public function woocommerce_email_footer()
+    {
+        echo $this->get_email_footer_simple();
     }
 
     /**
      * Add WooCommerce email styles
      */
-    public function add_woocommerce_email_styles($css) {
-        return $this->get_email_styles() . $css;
+    public function add_woocommerce_email_styles($css)
+    {
+        // Ocultar informació de botiga i textos promocionals de WooCommerce
+        $hide_wc_footer = '
+        /* Ocultar informació automàtica de WooCommerce */
+        #template_footer_text,
+        .wc-footer-text,
+        .woocommerce-email-footer-text,
+        #template_container #template_footer #template_footer_id,
+        .woocommerce-email-footer-cta,
+        #body_content_inner .wc-app-link,
+        .woocommerce-store-notice,
+        #credit {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            overflow: hidden !important;
+        }
+        ';
+
+        return $this->get_email_styles() . $hide_wc_footer . $css;
+    }
+
+    /**
+     * Eliminar textos promocionals de configuració
+     */
+    public function remove_wc_promo_text($settings)
+    {
+        return $settings;
+    }
+
+    /**
+     * Filtrar opcions d'email per eliminar textos promocionals
+     */
+    public function filter_wc_email_options($value, $object, $name, $default)
+    {
+        // Eliminar textos com "Process your orders on the go. Get the app"
+        if ($name === 'additional_content' || $name === 'footer_text') {
+            $promo_texts = [
+                'Process your orders on the go',
+                'Get the app',
+                'Download',
+                'iOS',
+                'Android'
+            ];
+
+            foreach ($promo_texts as $promo) {
+                if (stripos($value, $promo) !== false) {
+                    return '';
+                }
+            }
+        }
+
+        return $value;
     }
 
     /**
      * Add email styles to head (for preview)
      */
-    public function add_email_styles() {
+    public function add_email_styles()
+    {
         if (is_admin() && isset($_GET['preview_email'])) {
             echo '<style>' . $this->get_email_styles() . '</style>';
         }
@@ -631,7 +730,8 @@ class Malet_Torrent_Email_Templates {
     /**
      * Customize all WordPress emails to use HTML
      */
-    public function customize_wp_mail($args) {
+    public function customize_wp_mail($args)
+    {
         // Only process plain text emails
         if (!isset($args['headers']) || !is_array($args['headers'])) {
             $args['headers'] = [];
@@ -662,17 +762,19 @@ class Malet_Torrent_Email_Templates {
     /**
      * Check if content is already HTML
      */
-    private function is_html_content($content) {
+    private function is_html_content($content)
+    {
         return strpos($content, '<html') !== false || strpos($content, '<!DOCTYPE') !== false;
     }
 
     /**
      * Wrap plain text email in our HTML template
      */
-    private function wrap_plain_text_email($message, $subject) {
+    private function wrap_plain_text_email($message, $subject)
+    {
         ob_start();
         echo $this->get_email_header($subject);
-        ?>
+    ?>
 
         <div style="white-space: pre-line; line-height: 1.6;">
             <?php echo nl2br(esc_html($message)); ?>
@@ -683,7 +785,7 @@ class Malet_Torrent_Email_Templates {
             <p>Som una pastisseria tradicional catalana especialitzada en melindros artesans. Elaborem els nostres productes seguint les receptes familiars transmeses de generació en generació, sense colorants ni conservants artificials.</p>
         </div>
 
-        <?php
+    <?php
         echo $this->get_email_footer();
 
         return ob_get_clean();
@@ -692,12 +794,13 @@ class Malet_Torrent_Email_Templates {
     /**
      * Customize password reset email
      */
-    public function customize_password_reset_email($message, $key, $user_login, $user_data) {
+    public function customize_password_reset_email($message, $key, $user_login, $user_data)
+    {
         $reset_url = network_site_url("wp-login.php?action=resetpass&key=$key&login=" . rawurlencode($user_login), 'login');
 
         ob_start();
         echo $this->get_email_header('Restablir contrasenya - Malet Torrent');
-        ?>
+    ?>
 
         <div class="info-box">
             <h1>🔑 Sol·licitud de restabliment de contrasenya</h1>
@@ -731,7 +834,7 @@ class Malet_Torrent_Email_Templates {
             </p>
         </div>
 
-        <?php
+    <?php
         echo $this->get_email_footer();
 
         return ob_get_clean();
@@ -740,10 +843,11 @@ class Malet_Torrent_Email_Templates {
     /**
      * Customize password change notification
      */
-    public function customize_password_change_email($email_data, $user, $userdata) {
+    public function customize_password_change_email($email_data, $user, $userdata)
+    {
         ob_start();
         echo $this->get_email_header('Contrasenya canviada - Malet Torrent');
-        ?>
+    ?>
 
         <div class="success-box">
             <h1>✅ Contrasenya canviada correctament</h1>
@@ -762,7 +866,7 @@ class Malet_Torrent_Email_Templates {
             <p>Si no heu estat vós qui ha canviat la contrasenya, contacteu-nos immediatament per protegir el vostre compte.</p>
         </div>
 
-        <?php
+    <?php
         echo $this->get_email_footer();
 
         $email_data['message'] = ob_get_clean();
@@ -772,10 +876,11 @@ class Malet_Torrent_Email_Templates {
     /**
      * Customize new user notification email
      */
-    public function customize_new_user_email($email_data, $user, $blogname) {
+    public function customize_new_user_email($email_data, $user, $blogname)
+    {
         ob_start();
         echo $this->get_email_header('Benvingut/da a Malet Torrent');
-        ?>
+    ?>
 
         <div class="success-box">
             <h1>🎉 Benvingut/da a la família Malet Torrent!</h1>
@@ -810,7 +915,7 @@ class Malet_Torrent_Email_Templates {
             </ul>
         </div>
 
-        <?php
+    <?php
         echo $this->get_email_footer();
 
         $email_data['message'] = ob_get_clean();
@@ -820,10 +925,11 @@ class Malet_Torrent_Email_Templates {
     /**
      * Customize new user admin notification
      */
-    public function customize_new_user_admin_email($email_data, $user, $blogname) {
+    public function customize_new_user_admin_email($email_data, $user, $blogname)
+    {
         ob_start();
         echo $this->get_email_header('Nou usuari registrat - Malet Torrent');
-        ?>
+    ?>
 
         <div class="info-box">
             <h1>👤 Nou usuari registrat</h1>
@@ -845,7 +951,7 @@ class Malet_Torrent_Email_Templates {
             </p>
         </div>
 
-        <?php
+    <?php
         echo $this->get_email_footer();
 
         $email_data['message'] = ob_get_clean();
@@ -855,13 +961,14 @@ class Malet_Torrent_Email_Templates {
     /**
      * Customize comment notification
      */
-    public function customize_comment_notification($notify_message, $comment_id) {
+    public function customize_comment_notification($notify_message, $comment_id)
+    {
         $comment = get_comment($comment_id);
         $post = get_post($comment->comment_post_ID);
 
         ob_start();
         echo $this->get_email_header('Nou comentari - Malet Torrent');
-        ?>
+    ?>
 
         <div class="info-box">
             <h1>💬 Nou comentari rebut</h1>
@@ -891,7 +998,7 @@ class Malet_Torrent_Email_Templates {
             </p>
         </div>
 
-        <?php
+    <?php
         echo $this->get_email_footer();
 
         return ob_get_clean();
@@ -900,13 +1007,14 @@ class Malet_Torrent_Email_Templates {
     /**
      * Customize comment moderation notification
      */
-    public function customize_comment_moderation($notify_message, $comment_id) {
+    public function customize_comment_moderation($notify_message, $comment_id)
+    {
         $comment = get_comment($comment_id);
         $post = get_post($comment->comment_post_ID);
 
         ob_start();
         echo $this->get_email_header('Comentari pendent de moderació - Malet Torrent');
-        ?>
+    ?>
 
         <div class="warning-box">
             <h1>⏳ Comentari pendent de moderació</h1>
@@ -936,7 +1044,7 @@ class Malet_Torrent_Email_Templates {
             </p>
         </div>
 
-        <?php
+    <?php
         echo $this->get_email_footer();
 
         return ob_get_clean();
@@ -945,10 +1053,11 @@ class Malet_Torrent_Email_Templates {
     /**
      * Customize admin email change notification
      */
-    public function customize_admin_email_change($email_data, $old_email, $new_email) {
+    public function customize_admin_email_change($email_data, $old_email, $new_email)
+    {
         ob_start();
         echo $this->get_email_header('Email d\'administrador canviat - Malet Torrent');
-        ?>
+    ?>
 
         <div class="warning-box">
             <h1>⚠️ Email d'administrador canviat</h1>
@@ -968,7 +1077,7 @@ class Malet_Torrent_Email_Templates {
             <p>Si no heu autoritzat aquest canvi, contacteu immediatament amb el vostre proveïdor d'hosting o administrador tècnic.</p>
         </div>
 
-        <?php
+    <?php
         echo $this->get_email_footer();
 
         $email_data['message'] = ob_get_clean();
@@ -978,10 +1087,11 @@ class Malet_Torrent_Email_Templates {
     /**
      * Customize email address change notification
      */
-    public function customize_email_change_notification($email_data, $user, $userdata) {
+    public function customize_email_change_notification($email_data, $user, $userdata)
+    {
         ob_start();
         echo $this->get_email_header('Adreça de correu canviada - Malet Torrent');
-        ?>
+    ?>
 
         <div class="success-box">
             <h1>✅ Adreça de correu canviada</h1>
@@ -1001,7 +1111,7 @@ class Malet_Torrent_Email_Templates {
             <p>Si no heu estat vós qui ha canviat l'adreça de correu, contacteu-nos immediatament per protegir el vostre compte.</p>
         </div>
 
-        <?php
+<?php
         echo $this->get_email_footer();
 
         $email_data['message'] = ob_get_clean();
