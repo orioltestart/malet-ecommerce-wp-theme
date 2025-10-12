@@ -71,16 +71,6 @@ EOF
 
 RUN chmod +x /usr/local/bin/fix-volume-permissions.sh
 
-# Variables d'entorn definides al docker-compose.yml o Dokploy
-# Valors per defecte per si no es defineixen externament
-ENV WORDPRESS_URL="${WORDPRESS_URL:-https://wp2.malet.testart.cat}"
-ENV WORDPRESS_TITLE="${WORDPRESS_TITLE:-Malet Torrent - Pastisseria Artesana}"
-ENV WORDPRESS_ADMIN_USER="${WORDPRESS_ADMIN_USER:-admin}"
-ENV WORDPRESS_ADMIN_PASSWORD="${WORDPRESS_ADMIN_PASSWORD:-WZd6&F#@d\$oAqSW!A)}"
-ENV WORDPRESS_ADMIN_EMAIL="${WORDPRESS_ADMIN_EMAIL:-admin@malet.testart.cat}"
-ENV WORDPRESS_THEME_NAME="${WORDPRESS_THEME_NAME:-malet-torrent}"
-ENV WP_ENVIRONMENT_TYPE="${WP_ENVIRONMENT_TYPE:-local}"
-
 # Definir volums persistents específics
 VOLUME ["/var/www/html/wp-content/plugins", "/var/www/html/wp-content/uploads"]
 
