@@ -16,14 +16,14 @@ RUN { \
 # Habilitar mod_rewrite
 RUN a2enmod rewrite
 
-# Copiar tema personalitzat
+# Crear directori del tema i copiar només els fitxers del tema
 RUN mkdir -p /var/www/html/wp-content/themes/malet-torrent
 COPY . /var/www/html/wp-content/themes/malet-torrent
 
-# Ajustar permisos
+# Ajustar permisos generals de WordPress
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
-# Script per fixar permisos dels volums (s’executa a cada arrencada)
+# Script per fixar permisos dels volums persistents
 RUN cat > /usr/local/bin/fix-volume-permissions.sh << 'EOF'
 #!/bin/bash
 set -e
@@ -39,16 +39,18 @@ RUN chmod +x /usr/local/bin/fix-volume-permissions.sh
 RUN cat > /usr/local/bin/custom-entrypoint.sh << 'EOF'
 #!/bin/bash
 set -e
+
 # Fixar permisos abans d’arrencar
 /usr/local/bin/fix-volume-permissions.sh
+
 # Arrencar Apache / WordPress
 exec /usr/local/bin/docker-entrypoint.sh "$@"
 EOF
 
 RUN chmod +x /usr/local/bin/custom-entrypoint.sh
 
-# Indicar port intern exposat
-EXPOSE 8082
+# Exposar port intern del contenidor
+EXPOSE 80
 
 # Definir entrypoint i comanda per defecte
 ENTRYPOINT ["/usr/local/bin/custom-entrypoint.sh"]
