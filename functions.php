@@ -47,6 +47,22 @@ if ($redis_url && !defined('WP_REDIS_URL')) {
     define('WP_REDIS_URL', $redis_url);
 }
 
+// Forçar idioma del lloc a català
+function malet_force_catalan_locale($locale)
+{
+    return 'ca';
+}
+add_filter('locale', 'malet_force_catalan_locale', 999);
+
+// Assegurar que WPLANG està configurat
+function malet_ensure_wplang_option()
+{
+    if (get_option('WPLANG') !== 'ca') {
+        update_option('WPLANG', 'ca');
+    }
+}
+add_action('init', 'malet_ensure_wplang_option', 1);
+
 // Carregar traduccions del tema
 function malet_load_theme_textdomain()
 {
