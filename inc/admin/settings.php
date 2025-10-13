@@ -72,9 +72,10 @@ function malet_torrent_admin_menu()
  */
 function malet_torrent_settings_page()
 {
-    $installer = Malet_Torrent_Plugin_Installer::get_instance();
-    $status = $installer->get_installation_status();
-    $summary = Malet_Torrent_Admin_Notices::get_status_summary();
+    // Sistema de plugins requerits DESACTIVAT
+    // $installer = Malet_Torrent_Plugin_Installer::get_instance();
+    // $status = $installer->get_installation_status();
+    // $summary = Malet_Torrent_Admin_Notices::get_status_summary();
 ?>
     <div class="wrap malet-torrent-settings-page">
         <h1>🥨 Configuració Malet Torrent</h1>
@@ -89,41 +90,6 @@ function malet_torrent_settings_page()
                 <h2>📊 Estat de l'API</h2>
                 <div id="api-status">
                     <?php malet_torrent_display_api_status(); ?>
-                </div>
-            </div>
-
-            <div class="malet-torrent-card">
-                <h2>🔌 Estat dels Plugins</h2>
-                <div class="plugins-status">
-                    <div class="plugin-category">
-                        <h4>Plugins Requerits</h4>
-                        <div class="progress-indicator">
-                            <div class="progress-bar-small">
-                                <div class="progress-fill" style="width: <?php echo $summary['required']['percentage']; ?>%"></div>
-                            </div>
-                            <span><?php echo $summary['required']['completed']; ?>/<?php echo $summary['required']['total']; ?> (<?php echo $summary['required']['percentage']; ?>%)</span>
-                        </div>
-                    </div>
-
-                    <div class="plugin-category">
-                        <h4>Plugins Recomanats</h4>
-                        <div class="progress-indicator">
-                            <div class="progress-bar-small">
-                                <div class="progress-fill" style="width: <?php echo $summary['recommended']['percentage']; ?>%"></div>
-                            </div>
-                            <span><?php echo $summary['recommended']['completed']; ?>/<?php echo $summary['recommended']['total']; ?> (<?php echo $summary['recommended']['percentage']; ?>%)</span>
-                        </div>
-                    </div>
-
-                    <div class="plugin-category">
-                        <h4>Plugins Opcionals</h4>
-                        <div class="progress-indicator">
-                            <div class="progress-bar-small">
-                                <div class="progress-fill" style="width: <?php echo $summary['optional']['percentage']; ?>%"></div>
-                            </div>
-                            <span><?php echo $summary['optional']['completed']; ?>/<?php echo $summary['optional']['total']; ?> (<?php echo $summary['optional']['percentage']; ?>%)</span>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -152,16 +118,6 @@ function malet_torrent_settings_page()
                         <li><a href="<?php echo admin_url('admin.php?page=wpcf7'); ?>">Gestionar Formularis</a></li>
                     <?php endif; ?>
                     <li><a href="https://malet.testart.cat" target="_blank">Veure Web Principal</a></li>
-                </ul>
-            </div>
-
-            <div class="malet-torrent-card">
-                <h2>🔐 Seguretat i Rendiment</h2>
-                <ul>
-                    <li><?php echo (class_exists('wordfence')) ? '✅' : '❌'; ?> Wordfence Security</li>
-                    <li><?php echo (class_exists('LimitLoginAttempts')) ? '✅' : '❌'; ?> Limit Login Attempts</li>
-                    <li><?php echo (class_exists('UpdraftPlus')) ? '✅' : '❌'; ?> UpdraftPlus Backup</li>
-                    <li><?php echo (class_exists('RedisObjectCache')) ? '✅' : '❌'; ?> Redis Object Cache</li>
                 </ul>
             </div>
 

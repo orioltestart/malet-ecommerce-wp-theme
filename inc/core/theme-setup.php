@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Configuració bàsica del tema Malet Torrent
  *
@@ -14,7 +15,8 @@ if (!defined('ABSPATH')) {
 /**
  * Configuració inicial del tema
  */
-function malet_torrent_setup() {
+function malet_torrent_setup()
+{
     // Suport per títols automàtics
     add_theme_support('title-tag');
 
@@ -50,7 +52,8 @@ add_action('after_setup_theme', 'malet_torrent_setup');
 /**
  * Carregar traduccions del tema i assegurar WooCommerce
  */
-function malet_torrent_load_textdomain() {
+function malet_torrent_load_textdomain()
+{
     // Carregar traduccions del tema
     load_theme_textdomain('malet-torrent', MALETNEXT_THEME_DIR . '/languages');
 
@@ -63,7 +66,8 @@ function malet_torrent_load_textdomain() {
 /**
  * Configuració específica per headless
  */
-function malet_torrent_headless_setup() {
+function malet_torrent_headless_setup()
+{
     // Activar CORS per la API
     add_action('rest_api_init', 'malet_torrent_add_cors_support');
 
@@ -89,7 +93,8 @@ add_action('init', 'malet_torrent_headless_setup');
 /**
  * Registrar endpoint simple per debug
  */
-function malet_debug_endpoint() {
+function malet_debug_endpoint()
+{
     register_rest_route('malet-torrent/v1', '/debug', array(
         'methods' => 'GET',
         'callback' => function () {
@@ -99,23 +104,3 @@ function malet_debug_endpoint() {
     ));
 }
 add_action('rest_api_init', 'malet_debug_endpoint');
-
-/**
- * Inicialitzar sistema de plugins
- */
-function malet_torrent_init_plugin_system() {
-    if (is_admin()) {
-        new Malet_Torrent_Admin_Notices();
-    }
-}
-add_action('after_setup_theme', 'malet_torrent_init_plugin_system');
-
-/**
- * Reset avisos de plugins quan s'activa el tema
- */
-function malet_torrent_reset_plugin_notices() {
-    $admin_notices = new Malet_Torrent_Admin_Notices();
-    $admin_notices->reset_dismissed_notices();
-    $admin_notices->reset_dismissed_updates();
-}
-add_action('after_switch_theme', 'malet_torrent_reset_plugin_notices');

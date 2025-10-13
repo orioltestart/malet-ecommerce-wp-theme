@@ -48,7 +48,8 @@ if ($redis_url && !defined('WP_REDIS_URL')) {
 }
 
 // Carregar traduccions del tema
-function malet_load_theme_textdomain() {
+function malet_load_theme_textdomain()
+{
     load_theme_textdomain('malet-torrent', get_template_directory() . '/languages');
 }
 add_action('after_setup_theme', 'malet_load_theme_textdomain');
@@ -57,10 +58,6 @@ add_action('after_setup_theme', 'malet_load_theme_textdomain');
 // Funcions de CORS mogudes a inc/api/cors.php
 // Hooks d'SEO moguts a inc/seo/indexing.php
 
-// Incloure sistema d'instal·lació de plugins
-require_once get_template_directory() . '/inc/class-plugin-installer.php';
-
-require_once get_template_directory() . '/inc/admin-notices.php';
 
 // Incloure sistema JWT Auth
 require_once get_template_directory() . '/inc/class-jwt-auth.php';
@@ -2140,4 +2137,3 @@ function malet_register_improved_checkout_endpoint()
     ));
 }
 add_action('rest_api_init', 'malet_register_improved_checkout_endpoint');
-
