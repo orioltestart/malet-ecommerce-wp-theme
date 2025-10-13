@@ -91,6 +91,53 @@ function malet_torrent_headless_setup()
 add_action('init', 'malet_torrent_headless_setup');
 
 /**
+ * Redirigir frontend al lloc Next.js
+ * Permet accés a wp-admin i API REST
+ */
+function malet_torrent_redirect_to_nextjs()
+{
+    // No redirigir si estem a l'admin
+    if (is_admin()) {
+        return;
+    }
+
+    // No redirigir si és una petició AJAX
+    if (wp_doing_ajax()) {
+        return;
+    }
+
+    // No redirigir si és una petició a l'API REST
+    if (defined('REST_REQUEST') && REST_REQUEST) {
+        return;
+    }
+
+    // No redirigir si és wp-login.php o wp-cron.php
+    $script_name = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+    if (strpos($script_name, 'wp-login.php') !== false ||
+        strpos($script_name, 'wp-cron.php') !== false ||
+        strpos($script_name, 'xmlrpc.php') !== false) {
+        return;
+    }
+
+    // No redirigir si és una petició a /gestio-torrent
+    $request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+    if (strpos($request_uri, '/gestio-torrent') !== false) {
+        return;
+    }
+
+    // Redirigir al frontend Next.js
+    $frontend_url = FRONTEND_URL;
+
+    // Mantenir la ruta actual per redirigir a la mateixa pàgina a Next.js
+    $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $redirect_url = rtrim($frontend_url, '/') . $current_path;
+
+    wp_redirect($redirect_url, 301);
+    exit;
+}
+add_action('template_redirect', 'malet_torrent_redirect_to_nextjs');
+
+/**
  * Registrar endpoint simple per debug
  */
 function malet_debug_endpoint()
