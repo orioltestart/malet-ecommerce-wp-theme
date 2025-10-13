@@ -48,7 +48,7 @@ EOF
 RUN chmod +x /usr/local/bin/custom-entrypoint.sh
 
 # Indicar port intern exposat
-EXPOSE 80
+EXPOSE 8082
 
 # Definir entrypoint i comanda per defecte
 ENTRYPOINT ["/usr/local/bin/custom-entrypoint.sh"]
