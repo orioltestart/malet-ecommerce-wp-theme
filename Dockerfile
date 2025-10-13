@@ -1,4 +1,4 @@
-FROM wordpress:latest
+FROM wordpress:6.8.3-php8.3-apache
 
 # Instal·lar paquets mínims
 RUN apt-get update && apt-get install -y \

@@ -187,10 +187,7 @@ function malet_torrent_set_default_settings()
         update_option('timezone_string', 'Europe/Madrid');
     }
 
-    // Configurar idioma
-    if (get_option('WPLANG') == '') {
-        update_option('WPLANG', 'ca');
-    }
+    // Configuració d'idioma eliminada - es gestiona des de wp-admin
 }
 
 /**
