@@ -20,10 +20,10 @@ RUN a2enmod rewrite
 RUN mkdir -p /var/www/html/wp-content/themes/malet-torrent
 COPY . /var/www/html/wp-content/themes/malet-torrent
 
-# Permisos
+# Ajustar permisos
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
-# Script per fixar permisos (executat a cada arrencada)
+# Script per fixar permisos dels volums (s’executa a cada arrencada)
 RUN cat > /usr/local/bin/fix-volume-permissions.sh << 'EOF'
 #!/bin/bash
 set -e
@@ -35,15 +35,21 @@ EOF
 
 RUN chmod +x /usr/local/bin/fix-volume-permissions.sh
 
-# Wrapper d'entrypoint
+# Entrypoint personalitzat
 RUN cat > /usr/local/bin/custom-entrypoint.sh << 'EOF'
 #!/bin/bash
 set -e
+# Fixar permisos abans d’arrencar
 /usr/local/bin/fix-volume-permissions.sh
+# Arrencar Apache / WordPress
 exec /usr/local/bin/docker-entrypoint.sh "$@"
 EOF
 
 RUN chmod +x /usr/local/bin/custom-entrypoint.sh
 
+# Indicar port intern exposat
+EXPOSE 80
+
+# Definir entrypoint i comanda per defecte
 ENTRYPOINT ["/usr/local/bin/custom-entrypoint.sh"]
 CMD ["apache2-foreground"]
