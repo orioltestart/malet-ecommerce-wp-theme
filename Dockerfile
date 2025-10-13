@@ -1,11 +1,8 @@
 FROM wordpress:latest
 
-# Instal·lar dependències mínimes
+# Instal·lar paquets mínims
 RUN apt-get update && apt-get install -y \
-    curl \
-    default-mysql-client \
-    less \
-    nano \
+    curl default-mysql-client less nano \
     && rm -rf /var/lib/apt/lists/*
 
 # Configuració PHP optimitzada
@@ -16,48 +13,37 @@ RUN { \
     echo "max_execution_time = 300"; \
 } > /usr/local/etc/php/conf.d/custom.ini
 
-# Habilitar mod_rewrite per als permalinks
+# Habilitar mod_rewrite
 RUN a2enmod rewrite
 
-# Copiar el tema personalitzat
+# Copiar tema personalitzat
 RUN mkdir -p /var/www/html/wp-content/themes/malet-torrent
-COPY *.php /var/www/html/wp-content/themes/malet-torrent/
-COPY style.css /var/www/html/wp-content/themes/malet-torrent/
-COPY assets/ /var/www/html/wp-content/themes/malet-torrent/assets/
-COPY inc/ /var/www/html/wp-content/themes/malet-torrent/inc/
+COPY . /var/www/html/wp-content/themes/malet-torrent
 
-# Ajustar permisos
+# Permisos
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
-# Script per fixar permisos dels volums (s’executa en l’inici)
+# Script per fixar permisos (executat a cada arrencada)
 RUN cat > /usr/local/bin/fix-volume-permissions.sh << 'EOF'
 #!/bin/bash
 set -e
-echo "🔧 Configurant permisos dels volums persistents..."
+echo "🔧 Configurant permisos dels volums..."
 mkdir -p /var/www/html/wp-content/{plugins,uploads,upgrade,cache}
 chown -R www-data:www-data /var/www/html/wp-content
 chmod -R 775 /var/www/html/wp-content
-echo "✅ Permisos configurats correctament"
 EOF
 
 RUN chmod +x /usr/local/bin/fix-volume-permissions.sh
 
-# Wrapper de l'entrypoint oficial (afegeix la fixació de permisos)
-RUN cat > /usr/local/bin/docker-entrypoint-with-permissions.sh << 'EOF'
+# Wrapper d'entrypoint
+RUN cat > /usr/local/bin/custom-entrypoint.sh << 'EOF'
 #!/bin/bash
 set -e
-
-# Fixar permisos dels volums abans d’arrencar
 /usr/local/bin/fix-volume-permissions.sh
-
-# Executar l'entrypoint original amb els paràmetres rebuts
-exec docker-entrypoint.sh "$@"
+exec /usr/local/bin/docker-entrypoint.sh "$@"
 EOF
 
-RUN chmod +x /usr/local/bin/docker-entrypoint-with-permissions.sh
+RUN chmod +x /usr/local/bin/custom-entrypoint.sh
 
-# Utilitzar el wrapper com a entrypoint
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint-with-permissions.sh"]
-
-# Arrencar Apache (el CMD és el mateix que a la imatge base)
+ENTRYPOINT ["/usr/local/bin/custom-entrypoint.sh"]
 CMD ["apache2-foreground"]
