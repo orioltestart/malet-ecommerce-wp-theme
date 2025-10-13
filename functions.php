@@ -435,6 +435,15 @@ function malet_add_custom_product_fields()
         'rows' => 4
     ));
 
+    // Camp d'Al·lèrgens
+    woocommerce_wp_textarea_input(array(
+        'id' => '_malet_allergens',
+        'label' => 'Al·lèrgens',
+        'placeholder' => 'Ex: Gluten, ou, lactis, fruits secs...',
+        'description' => 'Llista d\'al·lèrgens del producte',
+        'rows' => 4
+    ));
+
     echo '</div>';
 }
 
@@ -453,6 +462,12 @@ function malet_save_custom_product_fields($post_id)
     if (!empty($ingredients)) {
         update_post_meta($post_id, '_malet_ingredients', esc_textarea($ingredients));
     }
+
+    // Guardar al·lèrgens
+    $allergens = $_POST['_malet_allergens'];
+    if (!empty($allergens)) {
+        update_post_meta($post_id, '_malet_allergens', esc_textarea($allergens));
+    }
 }
 
 // Mostrar camps personalitzats al frontend (single product)
@@ -463,8 +478,9 @@ function malet_display_custom_product_fields()
 
     $weight_grams = get_post_meta($product->get_id(), '_malet_weight_grams', true);
     $ingredients = get_post_meta($product->get_id(), '_malet_ingredients', true);
+    $allergens = get_post_meta($product->get_id(), '_malet_allergens', true);
 
-    if ($weight_grams || $ingredients) {
+    if ($weight_grams || $ingredients || $allergens) {
         echo '<div class="malet-product-details">';
 
         if ($weight_grams) {
@@ -475,6 +491,13 @@ function malet_display_custom_product_fields()
             echo '<div class="malet-ingredients">';
             echo '<p><strong>Ingredients:</strong></p>';
             echo '<p>' . wp_kses_post(nl2br($ingredients)) . '</p>';
+            echo '</div>';
+        }
+
+        if ($allergens) {
+            echo '<div class="malet-allergens">';
+            echo '<p><strong>Al·lèrgens:</strong></p>';
+            echo '<p>' . wp_kses_post(nl2br($allergens)) . '</p>';
             echo '</div>';
         }
 
@@ -510,6 +533,20 @@ function malet_add_custom_fields_to_api()
         },
         'schema' => array(
             'description' => 'Llista d\'ingredients del producte',
+            'type' => 'string'
+        )
+    ));
+
+    // Camp d'al·lèrgens
+    register_rest_field('product', 'allergens', array(
+        'get_callback' => function ($object) {
+            return get_post_meta($object['id'], '_malet_allergens', true);
+        },
+        'update_callback' => function ($value, $object) {
+            return update_post_meta($object->ID, '_malet_allergens', $value);
+        },
+        'schema' => array(
+            'description' => 'Llista d\'al·lèrgens del producte',
             'type' => 'string'
         )
     ));
