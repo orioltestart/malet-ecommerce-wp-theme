@@ -463,104 +463,15 @@ function malet_debug_recent_submissions($request) {
 }
 
 /**
- * Afegir headers CORS específics per formularis
+ * CORS per formularis: Eliminada funció duplicada
+ *
+ * La configuració CORS està centralitzada a inc/api/cors.php amb la funció
+ * malet_torrent_add_cors_support() que ja gestiona tots els endpoints REST API,
+ * incloent els de formularis.
+ *
+ * Per configurar origins CORS, usa la variable d'entorn CORS_ALLOWED_ORIGINS
+ * o modifica els valors per defecte a inc/api/cors.php
  */
-function malet_forms_cors_headers() {
-    // Detectar entorn actual
-    $environment = wp_get_environment_type();
-
-    // Primer, intentar carregar origins des de variable d'entorn
-    $cors_origins_env = getenv('CORS_ALLOWED_ORIGINS');
-    $allowed_origins = array();
-
-    if ($cors_origins_env !== false && !empty($cors_origins_env)) {
-        // Variable d'entorn definida: split per comes
-        $allowed_origins = array_map('trim', explode(',', $cors_origins_env));
-    } else {
-        // Fallback: configuració per defecte segons entorn
-        switch ($environment) {
-            case 'local':
-            case 'development':
-                $allowed_origins = array(
-                    'http://localhost:3000',
-                    'http://localhost:3001',
-                    'http://127.0.0.1:3000',
-                );
-                break;
-
-            case 'staging':
-                $allowed_origins = array(
-                    'https://staging.malet.testart.cat',
-                    'https://malet.testart.cat',
-                    'https://wp2.malet.testart.cat',
-                );
-                break;
-
-            case 'production':
-                $allowed_origins = array(
-                    'https://malet.cat',
-                    'https://www.malet.cat',
-                );
-                break;
-
-            default:
-                // Fallback a valor de configuració
-                $custom_origin = get_option('malet_frontend_url', '');
-                if ($custom_origin) {
-                    $allowed_origins = array($custom_origin);
-                }
-                break;
-        }
-    }
-
-    // Obtenir origin de la petició
-    $request_origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
-
-    // Log de debug per CORS
-    if (defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-        error_log("MALET CORS: Environment=$environment, Request Origin=$request_origin, Allowed Origins=" . implode(', ', $allowed_origins));
-    }
-
-    // Verificar si l'origin està permès
-    $allowed_origin = '';
-
-    if (in_array($request_origin, $allowed_origins)) {
-        // Origin està explícitament permès
-        $allowed_origin = $request_origin;
-    } elseif ($environment === 'local' || $environment === 'development') {
-        // En desenvolupament, permetre tots
-        $allowed_origin = '*';
-    } elseif ($environment === 'staging') {
-        // En staging, si hi ha un origin permetre'l (més permissiu per testing)
-        $allowed_origin = !empty($request_origin) ? $request_origin : (!empty($allowed_origins) ? $allowed_origins[0] : '');
-    } elseif ($environment === 'production') {
-        // En producció, només permetre origins estrictament definits
-        $allowed_origin = !empty($allowed_origins) ? $allowed_origins[0] : '';
-    } else {
-        // Fallback per entorns desconeguts
-        $allowed_origin = '*';
-    }
-
-    // Configurar headers CORS
-    if ($allowed_origin) {
-        header("Access-Control-Allow-Origin: " . $allowed_origin);
-        if (defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-            error_log("MALET CORS: Header set to: $allowed_origin");
-        }
-    }
-
-    header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
-    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-WP-Nonce");
-    header("Access-Control-Allow-Credentials: true");
-
-    // Per peticions OPTIONS (preflight)
-    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-        header("Access-Control-Max-Age: 86400");
-        status_header(200);
-        exit(0);
-    }
-}
-add_action('rest_api_init', 'malet_forms_cors_headers', 5);
 
 /**
  * Configurar rate limiting per formularis

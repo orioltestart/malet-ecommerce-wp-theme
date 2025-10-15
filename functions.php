@@ -48,13 +48,7 @@ if ($redis_url && !defined('WP_REDIS_URL')) {
 }
 
 // Configuració d'idioma eliminada - es gestiona des de wp-admin
-
-// Carregar traduccions del tema
-function malet_load_theme_textdomain()
-{
-    load_theme_textdomain('malet-torrent', get_template_directory() . '/languages');
-}
-add_action('after_setup_theme', 'malet_load_theme_textdomain');
+// Funció de càrrega de traduccions moguda a inc/core/theme-setup.php (malet_torrent_load_textdomain)
 
 // Funcions de configuració del tema mogudes a inc/core/theme-setup.php
 // Funcions de CORS mogudes a inc/api/cors.php
