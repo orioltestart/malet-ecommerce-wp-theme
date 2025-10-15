@@ -206,7 +206,17 @@ function malet_build_submission_response($form_id, $submission) {
         $invalid_fields = $submission->get_invalid_fields();
         if ($invalid_fields) {
             foreach ($invalid_fields as $field_name => $field_error) {
-                $result['invalid_fields'][$field_name] = $field_error->get_error_message();
+                // Gestionar diferents tipus de retorn segons versió de CF7
+                if (is_wp_error($field_error)) {
+                    // CF7 modern: objecte WP_Error
+                    $result['invalid_fields'][$field_name] = $field_error->get_error_message();
+                } elseif (is_array($field_error)) {
+                    // CF7 antic: array d'errors
+                    $result['invalid_fields'][$field_name] = implode(', ', $field_error);
+                } else {
+                    // Fallback: string simple
+                    $result['invalid_fields'][$field_name] = (string) $field_error;
+                }
             }
         }
     }
