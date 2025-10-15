@@ -185,6 +185,23 @@ REDIS_PASSWORD=your_password        # Password Redis (opcional)
 - La constant `WP_CACHE` s'activa automàticament quan es defineixen variables Redis
 - Compatible amb el plugin **Redis Object Cache**
 
+#### 🌐 Variables de CORS (OPCIONAL)
+```bash
+# Origins permesos per CORS (separats per comes)
+CORS_ALLOWED_ORIGINS=https://malet.testart.cat,https://wp2.malet.testart.cat
+```
+
+**Exemples per entorn:**
+- **Local**: `CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001`
+- **Staging**: `CORS_ALLOWED_ORIGINS=https://malet.testart.cat,https://wp2.malet.testart.cat,https://staging.malet.testart.cat`
+- **Production**: `CORS_ALLOWED_ORIGINS=https://malet.cat,https://www.malet.cat`
+
+**Notes:**
+- Centralitza la configuració CORS per tots els endpoints de l'API
+- Si no es defineix, s'usen valors per defecte segons `WP_ENVIRONMENT_TYPE`
+- Afecta tant la API general (`inc/api/cors.php`) com la Forms API (`inc/forms-api.php`)
+- Els origins es separen per comes (`,`) sense espais
+
 ### 🔧 Configuració per Entorns
 
 #### **Docker Compose (Desenvolupament Local)**

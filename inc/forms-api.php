@@ -118,44 +118,64 @@ function malet_get_single_form($request) {
  * Processar enviament de formulari
  */
 function malet_submit_form($request) {
+    error_log('MALET SUBMIT: Iniciant processament de formulari');
     $params = $request->get_params();
+    error_log('MALET SUBMIT: Paràmetres rebuts: ' . print_r($params, true));
 
     // Validacions inicials
     if (!isset($params['form_id'])) {
+        error_log('MALET SUBMIT ERROR: Missing form_id');
         return new WP_Error('missing_form_id', 'ID de formulari requerit', array('status' => 400));
     }
 
     $form_id = intval($params['form_id']);
+    error_log('MALET SUBMIT: Form ID: ' . $form_id);
+
     $contact_form = WPCF7_ContactForm::get_instance($form_id);
 
     if (!$contact_form) {
+        error_log('MALET SUBMIT ERROR: Formulari no trobat - ID: ' . $form_id);
         return new WP_Error('form_not_found', 'Formulari no trobat', array('status' => 404));
     }
 
+    error_log('MALET SUBMIT: Formulari trobat: ' . $contact_form->title());
+
     // Proteccions de seguretat
+    error_log('MALET SUBMIT: Verificant rate limiting');
     $rate_limit_check = malet_forms_rate_limiting();
     if (is_wp_error($rate_limit_check)) {
+        error_log('MALET SUBMIT ERROR: Rate limit superat');
         return $rate_limit_check;
     }
+    error_log('MALET SUBMIT: Rate limiting OK');
 
+    error_log('MALET SUBMIT: Verificant honeypot');
     if (!malet_validate_honeypot($params)) {
+        error_log('MALET SUBMIT ERROR: Spam detectat per honeypot');
         return new WP_Error('spam_detected', 'Spam detectat', array('status' => 403));
     }
+    error_log('MALET SUBMIT: Honeypot OK');
 
     // Preparar context per CF7
+    error_log('MALET SUBMIT: Configurant context CF7');
     malet_setup_cf7_context($form_id, $contact_form, $params);
 
     // Processar formulari (dispara hooks de CF7 i Flamingo)
+    error_log('MALET SUBMIT: Executant $contact_form->submit()');
     $contact_form->submit();
     $submission = WPCF7_Submission::get_instance();
 
     if (!$submission) {
+        error_log('MALET SUBMIT ERROR: No s\'ha pogut obtenir la submission');
         malet_cleanup_globals();
         return new WP_Error('submission_failed', 'Error al processar el formulari', array('status' => 500));
     }
 
+    error_log('MALET SUBMIT: Submission obtinguda, status: ' . $submission->get_status());
+
     // Generar resposta
     $result = malet_build_submission_response($form_id, $submission);
+    error_log('MALET SUBMIT: Resposta generada: ' . print_r($result, true));
 
     malet_cleanup_globals();
 
@@ -449,58 +469,84 @@ function malet_forms_cors_headers() {
     // Detectar entorn actual
     $environment = wp_get_environment_type();
 
-    // Definir origins permesos segons entorn
+    // Primer, intentar carregar origins des de variable d'entorn
+    $cors_origins_env = getenv('CORS_ALLOWED_ORIGINS');
     $allowed_origins = array();
 
-    switch ($environment) {
-        case 'local':
-        case 'development':
-            $allowed_origins = array(
-                'http://localhost:3000',
-                'http://localhost:3001',
-                'http://127.0.0.1:3000',
-            );
-            break;
+    if ($cors_origins_env !== false && !empty($cors_origins_env)) {
+        // Variable d'entorn definida: split per comes
+        $allowed_origins = array_map('trim', explode(',', $cors_origins_env));
+    } else {
+        // Fallback: configuració per defecte segons entorn
+        switch ($environment) {
+            case 'local':
+            case 'development':
+                $allowed_origins = array(
+                    'http://localhost:3000',
+                    'http://localhost:3001',
+                    'http://127.0.0.1:3000',
+                );
+                break;
 
-        case 'staging':
-            $allowed_origins = array(
-                'https://staging.malet.testart.cat',
-                'https://malet.testart.cat',
-            );
-            break;
+            case 'staging':
+                $allowed_origins = array(
+                    'https://staging.malet.testart.cat',
+                    'https://malet.testart.cat',
+                    'https://wp2.malet.testart.cat',
+                );
+                break;
 
-        case 'production':
-            $allowed_origins = array(
-                'https://malet.cat',
-                'https://www.malet.cat',
-            );
-            break;
+            case 'production':
+                $allowed_origins = array(
+                    'https://malet.cat',
+                    'https://www.malet.cat',
+                );
+                break;
 
-        default:
-            // Fallback a valor de configuració
-            $custom_origin = get_option('malet_frontend_url', '');
-            if ($custom_origin) {
-                $allowed_origins = array($custom_origin);
-            }
-            break;
+            default:
+                // Fallback a valor de configuració
+                $custom_origin = get_option('malet_frontend_url', '');
+                if ($custom_origin) {
+                    $allowed_origins = array($custom_origin);
+                }
+                break;
+        }
     }
 
     // Obtenir origin de la petició
     $request_origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
 
+    // Log de debug per CORS
+    if (defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+        error_log("MALET CORS: Environment=$environment, Request Origin=$request_origin, Allowed Origins=" . implode(', ', $allowed_origins));
+    }
+
     // Verificar si l'origin està permès
-    $allowed_origin = '*'; // Per defecte permetre tots (només per desenvolupament)
+    $allowed_origin = '';
 
     if (in_array($request_origin, $allowed_origins)) {
+        // Origin està explícitament permès
         $allowed_origin = $request_origin;
-    } elseif ($environment === 'production' || $environment === 'staging') {
-        // En producció/staging, només permetre origins definits
+    } elseif ($environment === 'local' || $environment === 'development') {
+        // En desenvolupament, permetre tots
+        $allowed_origin = '*';
+    } elseif ($environment === 'staging') {
+        // En staging, si hi ha un origin permetre'l (més permissiu per testing)
+        $allowed_origin = !empty($request_origin) ? $request_origin : (!empty($allowed_origins) ? $allowed_origins[0] : '');
+    } elseif ($environment === 'production') {
+        // En producció, només permetre origins estrictament definits
         $allowed_origin = !empty($allowed_origins) ? $allowed_origins[0] : '';
+    } else {
+        // Fallback per entorns desconeguts
+        $allowed_origin = '*';
     }
 
     // Configurar headers CORS
     if ($allowed_origin) {
         header("Access-Control-Allow-Origin: " . $allowed_origin);
+        if (defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+            error_log("MALET CORS: Header set to: $allowed_origin");
+        }
     }
 
     header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");

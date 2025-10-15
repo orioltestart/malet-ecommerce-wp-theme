@@ -21,17 +21,27 @@ function malet_torrent_add_cors_support() {
         return;
     }
 
-    // Orígens permesos
-    $allowed_origins = array(
-        'http://localhost:3000',
-        'http://localhost:8080',
-        'https://malet.testart.cat',
-        'https://wp.malet.testart.cat'
-    );
+    // Primer, intentar carregar origins des de variable d'entorn
+    $cors_origins_env = getenv('CORS_ALLOWED_ORIGINS');
+    $allowed_origins = array();
 
-    // Variables d'entorn adicionals
-    if (defined('NEXT_PUBLIC_SITE_URL') && NEXT_PUBLIC_SITE_URL) {
-        $allowed_origins[] = NEXT_PUBLIC_SITE_URL;
+    if ($cors_origins_env !== false && !empty($cors_origins_env)) {
+        // Variable d'entorn definida: split per comes
+        $allowed_origins = array_map('trim', explode(',', $cors_origins_env));
+    } else {
+        // Fallback: origins per defecte
+        $allowed_origins = array(
+            'http://localhost:3000',
+            'http://localhost:8080',
+            'https://malet.testart.cat',
+            'https://wp.malet.testart.cat',
+            'https://wp2.malet.testart.cat'
+        );
+
+        // Variables d'entorn adicionals
+        if (defined('NEXT_PUBLIC_SITE_URL') && NEXT_PUBLIC_SITE_URL) {
+            $allowed_origins[] = NEXT_PUBLIC_SITE_URL;
+        }
     }
 
     // Obtenir l'origen de la petició
