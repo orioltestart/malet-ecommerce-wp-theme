@@ -136,6 +136,55 @@ WORDPRESS_ADMIN_EMAIL=admin@malet.testart.cat
 WORDPRESS_THEME_NAME=malet-torrent
 ```
 
+#### 🐛 Variables de Debug WordPress (OPCIONALS)
+```bash
+# Activar mode debug de WordPress (true/false)
+WP_DEBUG=false
+
+# Mostrar errors en pantalla - recomanat false en producció (true/false)
+WP_DEBUG_DISPLAY=false
+
+# Guardar errors en fitxer wp-content/debug.log (true/false)
+WP_DEBUG_LOG=false
+```
+
+**Recomanacions per entorn:**
+- **Local/Development**: `WP_DEBUG=true`, `WP_DEBUG_DISPLAY=true`, `WP_DEBUG_LOG=true`
+- **Staging**: `WP_DEBUG=true`, `WP_DEBUG_DISPLAY=false`, `WP_DEBUG_LOG=true`
+- **Production**: `WP_DEBUG=false`, `WP_DEBUG_DISPLAY=false`, `WP_DEBUG_LOG=false`
+
+#### 🛡️ Variables de Rate Limiting Formularis (OPCIONALS)
+```bash
+# Activar o desactivar el rate limiting dels formularis (true/false)
+FORMS_RATE_LIMIT_ENABLED=false
+
+# Màxim nombre de submissions per IP en el període definit (per defecte: 5)
+FORMS_RATE_LIMIT_MAX=5
+
+# Període de temps en segons (per defecte: 600 = 10 minuts)
+FORMS_RATE_LIMIT_PERIOD=600
+```
+
+**Notes:**
+- Per defecte, el rate limiting està **desactivat en entorns local/development**
+- En producció/staging, si no es defineix `FORMS_RATE_LIMIT_ENABLED`, s'aplica el límit per defecte
+- Per desactivar completament: `FORMS_RATE_LIMIT_ENABLED=false`
+- Per proves locals sense límits: no cal definir cap variable (o `FORMS_RATE_LIMIT_ENABLED=false`)
+
+#### 🔴 Variables de Redis Object Cache (OPCIONALS)
+```bash
+# Configuració del servidor Redis
+REDIS_HOST=redis                    # Host del servidor Redis (per defecte: redis)
+REDIS_PORT=6379                     # Port del servidor Redis (per defecte: 6379)
+REDIS_DATABASE=0                    # Base de dades Redis (per defecte: 0)
+REDIS_PASSWORD=your_password        # Password Redis (opcional)
+```
+
+**Notes:**
+- Les constants `WP_REDIS_HOST`, `WP_REDIS_PORT`, `WP_REDIS_DATABASE` i `WP_REDIS_PASSWORD` es configuren automàticament al `wp-config.php` en arrencar el contenidor
+- La constant `WP_CACHE` s'activa automàticament quan es defineixen variables Redis
+- Compatible amb el plugin **Redis Object Cache**
+
 ### 🔧 Configuració per Entorns
 
 #### **Docker Compose (Desenvolupament Local)**

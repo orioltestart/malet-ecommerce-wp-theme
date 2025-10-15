@@ -520,9 +520,15 @@ add_action('rest_api_init', 'malet_forms_cors_headers', 5);
  * Configurar rate limiting per formularis
  */
 function malet_forms_rate_limiting() {
-    // Desactivat temporalment per testing
+    // Comprovar si el rate limiting està desactivat via variable d'entorn
+    $rate_limit_enabled = getenv('FORMS_RATE_LIMIT_ENABLED');
+    if ($rate_limit_enabled !== false && strtolower($rate_limit_enabled) === 'false') {
+        return true; // Rate limiting desactivat
+    }
+
+    // Per defecte, desactivar en entorns de desenvolupament
     $environment = wp_get_environment_type();
-    if (in_array($environment, array('local', 'development'))) {
+    if (in_array($environment, array('local', 'development')) && $rate_limit_enabled === false) {
         return true;
     }
 
@@ -533,12 +539,20 @@ function malet_forms_rate_limiting() {
         $submissions = 0;
     }
 
-    // Màxim 5 submissions per IP cada 10 minuts
-    if ($submissions >= 5) {
+    // Obtenir límit màxim de submissions des de variable d'entorn (per defecte: 5)
+    $max_submissions = getenv('FORMS_RATE_LIMIT_MAX');
+    $max_submissions = ($max_submissions !== false) ? intval($max_submissions) : 5;
+
+    // Obtenir període de temps en segons des de variable d'entorn (per defecte: 600 = 10 minuts)
+    $rate_limit_period = getenv('FORMS_RATE_LIMIT_PERIOD');
+    $rate_limit_period = ($rate_limit_period !== false) ? intval($rate_limit_period) : 600;
+
+    // Verificar si s'ha superat el límit
+    if ($submissions >= $max_submissions) {
         return new WP_Error('rate_limit_exceeded', 'Has superat el límit de submissions. Prova més tard.', array('status' => 429));
     }
 
-    set_transient($transient_key, $submissions + 1, 600); // 10 minuts
+    set_transient($transient_key, $submissions + 1, $rate_limit_period);
 
     return true;
 }
