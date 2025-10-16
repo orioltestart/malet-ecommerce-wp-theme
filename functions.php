@@ -88,6 +88,9 @@ require_once get_template_directory() . '/inc/analytics/google-analytics.php';
 // Funcions d'administració
 require_once get_template_directory() . '/inc/admin/settings.php';
 
+// Funcions de webhooks per Next.js Cache Revalidation
+require_once get_template_directory() . '/inc/webhook-functions.php';
+
 // ================================================================================
 
 // Sistema d'emails de WooCommerce (templates personalitzats)

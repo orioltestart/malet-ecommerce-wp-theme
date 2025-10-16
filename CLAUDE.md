@@ -498,8 +498,89 @@ REDIS_URL=redis://user:pass@host:port/db  # URL completa (opcional, sobreescriu 
 - [ ] Verificar sistema d'actualitzacions del tema
 - [ ] Configurar backup automàtic de base de dades
 
+## 🔄 Sistema de Webhooks per Next.js Cache Revalidation
+
+### Descripció
+
+Sistema automàtic de webhooks implementat amb PHP custom (100% gratuït) per invalidar la caché de Next.js quan hi ha canvis en productes, categories o posts de WordPress.
+
+### Funcionalitats
+
+✅ **Webhooks Automàtics**:
+- **Productes WooCommerce**: crear, actualitzar, eliminar, canvis d'stock
+- **Categories de productes**: crear, editar, eliminar
+- **Blog posts**: publicar, actualitzar, eliminar
+
+✅ **Dashboard Widget**:
+- Mostra l'estat de configuració al WordPress Dashboard
+- Verifica si `REVALIDATE_SECRET` està definit
+- Avís visual si falta configuració
+
+✅ **Botó de Test**:
+- Botó "🔄 Test Cache Revalidation" al WordPress Admin Bar
+- Envia webhook de prova amb un producte aleatori
+- Mostra missatge de confirmació/error
+
+✅ **Logs Detallats**:
+- Registra tots els webhooks enviats
+- Indica success/error amb emojis
+- Compatible amb `WP_DEBUG_LOG`
+
+### Configuració Requerida
+
+**Pas 1: Generar Secret Token**
+```bash
+openssl rand -base64 32
+```
+
+**Pas 2: Configurar WordPress (wp-config.php)**
+```php
+// Next.js Cache Revalidation
+define('REVALIDATE_SECRET', 'el_teu_token_aqui');
+define('NEXTJS_REVALIDATE_URL', 'https://malet.cat/api/revalidate');
+```
+
+**Pas 3: Configurar Next.js (.env.production)**
+```bash
+REVALIDATE_SECRET=el_teu_token_aqui
+```
+
+### Fitxers Implementats
+
+- **`inc/webhook-functions.php`** - Sistema complet de webhooks
+- **`functions.php`** - Ja inclou el fitxer de webhooks (línia 92)
+- **`WEBHOOKS_CONFIGURATION.md`** - Documentació completa amb troubleshooting
+
+### Verificació
+
+Després de configurar, vés al WordPress Dashboard i busca:
+- Widget **"🔄 Next.js Cache Revalidation Status"**
+- Si veus **✅ Configured**, tot està correcte!
+
+### Documentació Completa
+
+Consulta [WEBHOOKS_CONFIGURATION.md](WEBHOOKS_CONFIGURATION.md) per:
+- Instruccions detallades d'instal·lació
+- Exemples de test amb cURL
+- Troubleshooting d'errors comuns
+- Best practices de seguretat
+
+### Flux de Treball
+
+```
+WordPress Admin (editar producte)
+    ↓
+Webhook Trigger automàtic
+    ↓
+POST https://malet.cat/api/revalidate
+    ↓
+Next.js Revalidation API
+    ↓
+Cache Invalidated ✅
+```
+
 ---
 
-*Documentació actualitzada: 27 de setembre de 2025*
+*Documentació actualitzada: 16 de gener de 2025*
 *Generat amb Claude Code*
-*Estat: Forms API implementat completament ✅*
+*Estat: Forms API i Webhooks implementats completament ✅*
